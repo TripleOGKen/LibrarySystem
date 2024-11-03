@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Library System</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="current_loans">Current Loans</string>
+    <string name="loan_history">Loan History</string>
+    <string name="no_loans_found">No loans found</string>
+    <string name="remaining_extensions">Remaining extensions: %d</string>
+
+    <!-- Dialog strings -->
+    <string name="extend">Extend</string>
+    <string name="cancel">Cancel</string>
+    <string name="extend_loan">Extend Loan</string>
+    <string name="extend_loan_message">Choose extension period:</string>
+    <string name="one_week">1 Week</string>
+    <string name="two_weeks">2 Weeks</string>
+    <string name="three_weeks">3 Weeks</string>
+</resources>

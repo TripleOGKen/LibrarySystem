@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="student.inti.librarysystem.ui.login.LoginFragment"
+        android:label="Login">
+        <action
+            android:id="@+id/action_loginFragment_to_profileFragment"
+            app:destination="@id/profileFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="student.inti.librarysystem.ui.profile.ProfileFragment"
+        android:label="Profile" />
+
+    <fragment
+        android:id="@+id/roomBookingFragment"
+        android:name="student.inti.librarysystem.ui.roombooking.RoomBookingFragment"
+        android:label="Room Booking" />
+
+    <fragment
+        android:id="@+id/bookLoansFragment"
+        android:name="student.inti.librarysystem.ui.bookloans.BookLoansFragment"
+        android:label="Book Loans" />
+
+    <fragment
+        android:id="@+id/examPapersFragment"
+        android:name="student.inti.librarysystem.ui.exams.ExamPapersFragment"
+        android:label="Past Year Papers" />
+</navigation>

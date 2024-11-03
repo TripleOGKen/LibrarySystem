@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/profileFragment"
+            android:icon="@drawable/ic_person"
+            android:title="Profile" />
+
+        <item
+            android:id="@+id/roomBookingFragment"
+            android:icon="@drawable/ic_meeting_room"
+            android:title="Room Booking" />
+
+        <item
+            android:id="@+id/bookLoansFragment"
+            android:icon="@drawable/ic_book"
+            android:title="Book Loans" />
+
+        <item
+            android:id="@+id/examPapersFragment"
+            android:icon="@drawable/ic_description"
+            android:title="Past Year Papers" />
+    </group>
+
+    <item android:title="Account">
+        <menu>
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@drawable/ic_logout"
+                android:title="Sign Out" />
+        </menu>
+    </item>
+</menu>
