@@ -1,61 +1,143 @@
 package student.inti.librarysystem;
 
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
-import androidx.room.ForeignKey;
+import com.google.firebase.firestore.DocumentId;
 import java.util.Date;
+import java.util.Objects;
 
-@Entity(tableName = "room_bookings",
-        foreignKeys = @ForeignKey(entity = Student.class,
-                parentColumns = "studentId",
-                childColumns = "bookingStudentId",
-                onDelete = ForeignKey.CASCADE))
-public class RoomBooking {
-    @PrimaryKey(autoGenerate = true)
-    private long id;
-    private String bookingStudentId;
-    private int roomNumber;
-    private Date startTime;
-    private Date endTime;
-    private String participantNames;
-    private String participantIds;
+public class BookLoan {
+    @DocumentId
+    private String loanId;
+    private String bookCode;
+    private String bookId;
+    private String bookName;
+    private Date borrowDate;
+    private Date returnDate;
+    private String studentId;
+    private int extensionWeeks;
+    private boolean isReturned;
 
-    // Constructor
-    public RoomBooking(String bookingStudentId, int roomNumber, Date startTime,
-                       Date endTime, String participantNames, String participantIds) {
-        this.bookingStudentId = bookingStudentId;
-        this.roomNumber = roomNumber;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.participantNames = participantNames;
-        this.participantIds = participantIds;
+    // Required empty constructor for Firestore
+    public BookLoan() {}
+
+    public BookLoan(String bookId, String bookCode, String bookName, String studentId,
+                    Date borrowDate, Date returnDate) {
+        this.bookId = bookId;
+        this.bookCode = bookCode;
+        this.bookName = bookName;
+        this.studentId = studentId;
+        this.borrowDate = borrowDate;
+        this.returnDate = returnDate;
+        this.extensionWeeks = 0;
+        this.isReturned = false;
     }
 
     // Getters and Setters
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
-
-    public String getBookingStudentId() { return bookingStudentId; }
-    public void setBookingStudentId(String bookingStudentId) {
-        this.bookingStudentId = bookingStudentId;
+    public String getLoanId() {
+        return loanId;
     }
 
-    public int getRoomNumber() { return roomNumber; }
-    public void setRoomNumber(int roomNumber) { this.roomNumber = roomNumber; }
-
-    public Date getStartTime() { return startTime; }
-    public void setStartTime(Date startTime) { this.startTime = startTime; }
-
-    public Date getEndTime() { return endTime; }
-    public void setEndTime(Date endTime) { this.endTime = endTime; }
-
-    public String getParticipantNames() { return participantNames; }
-    public void setParticipantNames(String participantNames) {
-        this.participantNames = participantNames;
+    public void setLoanId(String loanId) {
+        this.loanId = loanId;
     }
 
-    public String getParticipantIds() { return participantIds; }
-    public void setParticipantIds(String participantIds) {
-        this.participantIds = participantIds;
+    public String getBookCode() {
+        return bookCode;
+    }
+
+    public void setBookCode(String bookCode) {
+        this.bookCode = bookCode;
+    }
+
+    public String getBookId() {
+        return bookId;
+    }
+
+    public void setBookId(String bookId) {
+        this.bookId = bookId;
+    }
+
+    public String getBookName() {
+        return bookName;
+    }
+
+    public void setBookName(String bookName) {
+        this.bookName = bookName;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
+    }
+
+    public Date getBorrowDate() {
+        return borrowDate;
+    }
+
+    public void setBorrowDate(Date borrowDate) {
+        this.borrowDate = borrowDate;
+    }
+
+    public Date getReturnDate() {
+        return returnDate;
+    }
+
+    public void setReturnDate(Date returnDate) {
+        this.returnDate = returnDate;
+    }
+
+    public int getExtensionWeeks() {
+        return extensionWeeks;
+    }
+
+    public void setExtensionWeeks(int extensionWeeks) {
+        this.extensionWeeks = extensionWeeks;
+    }
+
+    public boolean isReturned() {
+        return isReturned;
+    }
+
+    public void setReturned(boolean returned) {
+        isReturned = returned;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BookLoan bookLoan = (BookLoan) o;
+        return extensionWeeks == bookLoan.extensionWeeks &&
+                isReturned == bookLoan.isReturned &&
+                Objects.equals(loanId, bookLoan.loanId) &&
+                Objects.equals(bookCode, bookLoan.bookCode) &&
+                Objects.equals(bookId, bookLoan.bookId) &&
+                Objects.equals(bookName, bookLoan.bookName) &&
+                Objects.equals(studentId, bookLoan.studentId) &&
+                Objects.equals(borrowDate, bookLoan.borrowDate) &&
+                Objects.equals(returnDate, bookLoan.returnDate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(loanId, bookCode, bookId, bookName, studentId,
+                borrowDate, returnDate, extensionWeeks, isReturned);
+    }
+
+    @Override
+    public String toString() {
+        return "BookLoan{" +
+                "loanId='" + loanId + '\'' +
+                ", bookCode='" + bookCode + '\'' +
+                ", bookId='" + bookId + '\'' +
+                ", bookName='" + bookName + '\'' +
+                ", studentId='" + studentId + '\'' +
+                ", borrowDate=" + borrowDate +
+                ", returnDate=" + returnDate +
+                ", extensionWeeks=" + extensionWeeks +
+                ", isReturned=" + isReturned +
+                '}';
     }
 }

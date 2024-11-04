@@ -11,10 +11,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import student.inti.librarysystem.R;
 import student.inti.librarysystem.data.entity.BookLoan;
 import student.inti.librarysystem.databinding.FragmentBookLoansBinding;
 import student.inti.librarysystem.databinding.DialogLoanExtensionBinding;
+import student.inti.librarysystem.util.FirebaseManager;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,18 +31,61 @@ public class BookLoansFragment extends Fragment implements BookLoanAdapter.OnLoa
     private BookLoanAdapter adapter;
     private boolean isCurrentLoansTab = true;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+    private FirebaseFirestore db;
+    private String currentStudentId;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = FragmentBookLoansBinding.inflate(inflater, container, false);
         viewModel = new ViewModelProvider(this).get(BookLoanViewModel.class);
+        db = FirebaseFirestore.getInstance();
+
+        // Get current student ID from Firebase Auth
+        FirebaseManager firebaseManager = FirebaseManager.getInstance();
+        currentStudentId = firebaseManager.getCurrentUser().getEmail().split("@")[0].toUpperCase();
 
         setupRecyclerView();
         setupTabLayout();
-        loadSampleData(); // For demonstration
+        loadBookLoans();
 
         return binding.getRoot();
+    }
+
+    private void loadBookLoans() {
+        // Query for current loans
+        db.collection("bookLoans")
+                .whereEqualTo("studentId", currentStudentId)
+                .whereEqualTo("isReturned", false)
+                .get()
+                .addOnSuccessListener(currentLoansSnapshot -> {
+                    List<BookLoan> currentLoans = new ArrayList<>();
+                    currentLoansSnapshot.forEach(doc -> {
+                        BookLoan loan = doc.toObject(BookLoan.class);
+                        currentLoans.add(loan);
+                    });
+                    viewModel.setCurrentLoans(currentLoans);
+                    if (isCurrentLoansTab) {
+                        updateLoansDisplay();
+                    }
+                });
+
+        // Query for loan history
+        db.collection("bookLoans")
+                .whereEqualTo("studentId", currentStudentId)
+                .whereEqualTo("isReturned", true)
+                .get()
+                .addOnSuccessListener(historySnapshot -> {
+                    List<BookLoan> loanHistory = new ArrayList<>();
+                    historySnapshot.forEach(doc -> {
+                        BookLoan loan = doc.toObject(BookLoan.class);
+                        loanHistory.add(loan);
+                    });
+                    viewModel.setLoanHistory(loanHistory);
+                    if (!isCurrentLoansTab) {
+                        updateLoansDisplay();
+                    }
+                });
     }
 
     private void setupRecyclerView() {
@@ -64,107 +110,6 @@ public class BookLoansFragment extends Fragment implements BookLoanAdapter.OnLoa
         });
     }
 
-    private void loadSampleData() {
-        // Sample current loans
-        List<BookLoan> currentLoans = new ArrayList<>();
-        Calendar calendar = Calendar.getInstance();
-
-        // Current Loan 1
-        calendar.add(Calendar.DAY_OF_MONTH, 7);
-        currentLoans.add(new BookLoan(
-                "Introduction to Programming",
-                "Yellow-7D-001",
-                new Date(),
-                calendar.getTime(),
-                0
-        ));
-
-        // Current Loan 2
-        calendar.setTime(new Date());
-        calendar.add(Calendar.DAY_OF_MONTH, 14);
-        currentLoans.add(new BookLoan(
-                "Database Management Systems",
-                "Green-14D-002",
-                new Date(),
-                calendar.getTime(),
-                0
-        ));
-
-        // Current Loan 3
-        calendar.setTime(new Date());
-        calendar.add(Calendar.DAY_OF_MONTH, 21);
-        currentLoans.add(new BookLoan(
-                "Software Engineering Principles",
-                "Blue-21D-003",
-                new Date(),
-                calendar.getTime(),
-                0
-        ));
-
-        // Sample loan history
-        List<BookLoan> loanHistory = new ArrayList<>();
-        calendar.setTime(new Date());
-
-        // History 1
-        calendar.add(Calendar.MONTH, -1);
-        Date oldBorrowDate = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_MONTH, 7);
-        loanHistory.add(new BookLoan(
-                "Web Development Basics",
-                "Yellow-7D-004",
-                oldBorrowDate,
-                calendar.getTime(),
-                0,
-                true
-        ));
-
-        // History 2
-        calendar.setTime(new Date());
-        calendar.add(Calendar.MONTH, -2);
-        oldBorrowDate = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_MONTH, 14);
-        loanHistory.add(new BookLoan(
-                "Data Structures and Algorithms",
-                "Green-14D-005",
-                oldBorrowDate,
-                calendar.getTime(),
-                1,
-                true
-        ));
-
-        // History 3
-        calendar.setTime(new Date());
-        calendar.add(Calendar.MONTH, -3);
-        oldBorrowDate = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_MONTH, 21);
-        loanHistory.add(new BookLoan(
-                "Mobile App Development",
-                "Blue-21D-006",
-                oldBorrowDate,
-                calendar.getTime(),
-                2,
-                true
-        ));
-
-        // History 4
-        calendar.setTime(new Date());
-        calendar.add(Calendar.MONTH, -4);
-        oldBorrowDate = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_MONTH, 14);
-        loanHistory.add(new BookLoan(
-                "Computer Networks",
-                "Green-14D-007",
-                oldBorrowDate,
-                calendar.getTime(),
-                1,
-                true
-        ));
-
-        viewModel.setCurrentLoans(currentLoans);
-        viewModel.setLoanHistory(loanHistory);
-        updateLoansDisplay();
-    }
-
     private void updateLoansDisplay() {
         if (isCurrentLoansTab) {
             adapter.updateLoans(viewModel.getCurrentLoans().getValue(), true);
@@ -187,20 +132,43 @@ public class BookLoansFragment extends Fragment implements BookLoanAdapter.OnLoa
                 .setTitle(R.string.extend_loan)
                 .setView(dialogBinding.getRoot())
                 .setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
-                    int selectedWeeks = 1; // Default to 1 week
+                    int selectedWeeks = 1;
                     if (dialogBinding.twoWeeks.isChecked()) selectedWeeks = 2;
                     else if (dialogBinding.threeWeeks.isChecked()) selectedWeeks = 3;
 
+                    // Calculate new return date
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTime(loan.getReturnDate());
                     calendar.add(Calendar.WEEK_OF_YEAR, selectedWeeks);
-                    loan.setReturnDate(calendar.getTime());
-                    loan.setExtensionWeeks(loan.getExtensionWeeks() + selectedWeeks);
+                    Date newReturnDate = calendar.getTime();
 
-                    viewModel.updateLoan(loan);
-                    Toast.makeText(getContext(),
-                            "Loan extended by " + selectedWeeks + " week(s)",
-                            Toast.LENGTH_SHORT).show();
+                    // Update in Firestore
+                    db.collection("bookLoans")
+                            .whereEqualTo("bookId", loan.getBookId())
+                            .whereEqualTo("studentId", currentStudentId)
+                            .whereEqualTo("isReturned", false)
+                            .get()
+                            .addOnSuccessListener(querySnapshot -> {
+                                if (!querySnapshot.isEmpty()) {
+                                    String docId = querySnapshot.getDocuments().get(0).getId();
+                                    db.collection("bookLoans").document(docId)
+                                            .update(
+                                                    "returnDate", newReturnDate,
+                                                    "extensionWeeks", loan.getExtensionWeeks() + selectedWeeks
+                                            )
+                                            .addOnSuccessListener(aVoid -> {
+                                                loan.setReturnDate(newReturnDate);
+                                                loan.setExtensionWeeks(loan.getExtensionWeeks() + selectedWeeks);
+                                                viewModel.updateLoan(loan);
+                                                Toast.makeText(getContext(),
+                                                        "Loan extended by " + selectedWeeks + " week(s)",
+                                                        Toast.LENGTH_SHORT).show();
+                                            })
+                                            .addOnFailureListener(e -> Toast.makeText(getContext(),
+                                                    "Failed to extend loan",
+                                                    Toast.LENGTH_SHORT).show());
+                                }
+                            });
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .create();
