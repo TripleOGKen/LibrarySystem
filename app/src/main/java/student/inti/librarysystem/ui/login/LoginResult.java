@@ -1,6 +1,6 @@
 package student.inti.librarysystem.ui.login;
 
-import student.inti.librarysystem.data.entity.Student;
+import student.inti.librarysystem.model.Student;
 
 public class LoginResult {
     public final boolean success;

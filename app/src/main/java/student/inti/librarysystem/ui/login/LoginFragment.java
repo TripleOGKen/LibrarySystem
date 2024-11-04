@@ -1,6 +1,7 @@
 package student.inti.librarysystem.ui.login;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import student.inti.librarysystem.databinding.FragmentLoginBinding;
 public class LoginFragment extends Fragment {
     private FragmentLoginBinding binding;
     private LoginViewModel loginViewModel;
+    private static final String TAG = "LoginFragment";
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -67,10 +69,8 @@ public class LoginFragment extends Fragment {
     private void attemptLogin() {
         if (binding == null) return;
 
-        String studentId = binding.studentIdInput.getText() != null ?
-                binding.studentIdInput.getText().toString() : "";
-        String password = binding.passwordInput.getText() != null ?
-                binding.passwordInput.getText().toString() : "";
+        String studentId = binding.studentIdInput.getText().toString().trim().toUpperCase();
+        String password = binding.passwordInput.getText().toString();
 
         if (studentId.isEmpty()) {
             binding.studentIdLayout.setError("Student ID is required");
@@ -85,6 +85,9 @@ public class LoginFragment extends Fragment {
         // Clear any previous errors
         binding.studentIdLayout.setError(null);
         binding.passwordLayout.setError(null);
+
+        // Add logging
+        Log.d("LoginFragment", "Attempting login with Student ID: " + studentId);
 
         // Attempt login
         binding.loadingIndicator.setVisibility(View.VISIBLE);

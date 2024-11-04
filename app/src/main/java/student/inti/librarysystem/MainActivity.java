@@ -21,22 +21,37 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.navigation.NavigationView;
 import student.inti.librarysystem.databinding.ActivityMainBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import student.inti.librarysystem.util.FirebaseManager;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private ActivityMainBinding binding;
     private NavController navController;
     private AppBarConfiguration appBarConfiguration;
     private SharedPreferences sharedPreferences;
+    private FirebaseManager firebaseManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        firebaseManager = FirebaseManager.getInstance();
         sharedPreferences = getSharedPreferences("LibrarySystemPrefs", MODE_PRIVATE);
-
-        // Set up the toolbar
         setSupportActionBar(binding.toolbar);
+
+        // Check if user is logged in
+        if (!firebaseManager.isUserLoggedIn()) {
+            // User not logged in, navigate to login
+            NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.nav_host_fragment);
+            if (navHostFragment != null) {
+                NavController navController = navHostFragment.getNavController();
+                navController.navigate(R.id.loginFragment);
+            }
+            return;
+        }
 
         // Set up Navigation Controller
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
@@ -125,7 +140,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_logout) {
-            // Clear user session
+            // Sign out from Firebase
+            firebaseManager.signOut();
+
+            // Clear SharedPreferences
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.clear();
             editor.apply();

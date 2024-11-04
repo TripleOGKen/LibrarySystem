@@ -14,7 +14,8 @@ public class Student {
     private String email;
     private String profilePicturePath;
 
-    // Constructor
+    public Student() {}
+
     public Student(@NonNull String studentId, String password, String name, String email) {
         this.studentId = studentId;
         this.password = password;
@@ -22,7 +23,7 @@ public class Student {
         this.email = email;
     }
 
-    // Getters and Setters
+    // Existing getters and setters
     @NonNull
     public String getStudentId() {
         return studentId;

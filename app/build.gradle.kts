@@ -2,6 +2,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "1.9.0-1.0.13"
+    id("com.google.gms.google-services")
+
 }
 
 android {
@@ -41,6 +43,7 @@ android {
         jvmTarget = "17"
     }
 }
+
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
@@ -90,4 +93,31 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
     implementation("androidx.preference:preference-ktx:1.2.1")
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
+
+    tasks.register("printDebugSigningReport") {
+        doLast {
+            val debugStoreFile = android.signingConfigs.getByName("debug").storeFile
+            if (debugStoreFile != null && debugStoreFile.exists()) {
+                println("Debug Keystore Path: ${debugStoreFile.absolutePath}")
+                exec {
+                    commandLine(
+                        "keytool", "-list", "-v",
+                        "-keystore", debugStoreFile.absolutePath,
+                        "-alias", "androiddebugkey",
+                        "-storepass", "android",
+                        "-keypass", "android"
+                    )
+                }
+            } else {
+                println("Debug keystore file not found!")
+            }
+        }
+    }
 }
