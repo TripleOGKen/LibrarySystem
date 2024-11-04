@@ -13,6 +13,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Book Title (existing) -->
         <TextView
             android:id="@+id/book_title"
             android:layout_width="match_parent"
@@ -20,18 +21,59 @@
             android:textSize="18sp"
             android:textStyle="bold"/>
 
+        <!-- Book Code (new) -->
         <TextView
-            android:id="@+id/due_date"
+            android:id="@+id/book_code"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="4dp"/>
 
+        <!-- Borrow Date (new) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Borrowed: "
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/borrow_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Return/Due Date (modified existing) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Return: "
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/due_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Extensions Left (existing) -->
         <TextView
             android:id="@+id/extensions_left"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"/>
 
+        <!-- Extend Button (existing) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/extend_button"
             android:layout_width="wrap_content"

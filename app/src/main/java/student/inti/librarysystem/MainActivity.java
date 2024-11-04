@@ -1,10 +1,14 @@
 package student.inti.librarysystem;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -22,12 +26,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ActivityMainBinding binding;
     private NavController navController;
     private AppBarConfiguration appBarConfiguration;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        sharedPreferences = getSharedPreferences("LibrarySystemPrefs", MODE_PRIVATE);
 
         // Set up the toolbar
         setSupportActionBar(binding.toolbar);
@@ -53,6 +59,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // Set up NavigationView
             binding.navView.setNavigationItemSelectedListener(this);
             NavigationUI.setupWithNavController(binding.navView, navController);
+
+            // Update navigation header with user info
+            updateNavigationHeader();
         }
 
         // Add drawer toggle
@@ -92,6 +101,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
+    private void updateNavigationHeader() {
+        View headerView = binding.navView.getHeaderView(0);
+        TextView nameTextView = headerView.findViewById(R.id.nav_header_name);
+        TextView emailTextView = headerView.findViewById(R.id.nav_header_email);
+
+        // Get user info from SharedPreferences
+        String userName = sharedPreferences.getString("user_name", "Student Name");
+        String userEmail = sharedPreferences.getString("user_email", "student@example.com");
+
+        nameTextView.setText(userName);
+        emailTextView.setText(userEmail);
+    }
+
     @Override
     public boolean onSupportNavigateUp() {
         return NavigationUI.navigateUp(navController, appBarConfiguration)
@@ -103,7 +125,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_logout) {
-            // Handle logout
+            // Clear user session
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.clear();
+            editor.apply();
+
+            // Restart app from login
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
             finish();
             return true;
         }

@@ -88,4 +88,6 @@ dependencies {
 
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    implementation("androidx.preference:preference-ktx:1.2.1")
 }

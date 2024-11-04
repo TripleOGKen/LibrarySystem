@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,8 @@ import java.io.File;
 public class ProfileFragment extends Fragment {
     private FragmentProfileBinding binding;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private static final String CURRENT_USER_ID = "P23014788";
+    private static final String CURRENT_PASSWORD = "test123";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -46,15 +49,20 @@ public class ProfileFragment extends Fragment {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                        handleImageResult(result.getData().getData());
+                        Uri imageUri = result.getData().getData();
+                        if (imageUri != null) {
+                            handleImageResult(imageUri);
+                        }
                     }
                 }
         );
     }
 
     private void setupViews() {
-        binding.changePhotoButton.setOnClickListener(v -> openImagePicker());
-        binding.changePasswordButton.setOnClickListener(v -> attemptPasswordChange());
+        if (binding != null) {
+            binding.changePhotoButton.setOnClickListener(v -> openImagePicker());
+            binding.changePasswordButton.setOnClickListener(v -> attemptPasswordChange());
+        }
     }
 
     private void openImagePicker() {
@@ -63,6 +71,8 @@ public class ProfileFragment extends Fragment {
     }
 
     private void handleImageResult(Uri imageUri) {
+        if (getContext() == null) return;
+
         try {
             String imagePath = ProfileManager.saveProfilePicture(requireContext(), imageUri);
             if (imagePath != null) {
@@ -75,11 +85,15 @@ public class ProfileFragment extends Fragment {
     }
 
     private void loadProfilePicture() {
-        File profilePic = ProfileManager.getProfilePicture(requireContext(), "P23014788");
+        if (getContext() == null || binding == null) return;
+
+        File profilePic = ProfileManager.getProfilePicture(requireContext(), CURRENT_USER_ID);
         if (profilePic != null) {
             Glide.with(this)
                     .load(profilePic)
                     .centerCrop()
+                    .placeholder(R.drawable.default_profile)
+                    .error(R.drawable.default_profile)
                     .into(binding.profileImage);
         } else {
             binding.profileImage.setImageResource(R.drawable.default_profile);
@@ -87,15 +101,19 @@ public class ProfileFragment extends Fragment {
     }
 
     private void attemptPasswordChange() {
-        String currentPassword = binding.currentPasswordInput.getText().toString();
-        String newPassword = binding.newPasswordInput.getText().toString();
+        if (binding == null) return;
 
-        if (currentPassword.isEmpty() || newPassword.isEmpty()) {
+        String currentPassword = binding.currentPasswordInput.getText() != null ?
+                binding.currentPasswordInput.getText().toString() : "";
+        String newPassword = binding.newPasswordInput.getText() != null ?
+                binding.newPasswordInput.getText().toString() : "";
+
+        if (TextUtils.isEmpty(currentPassword) || TextUtils.isEmpty(newPassword)) {
             Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!currentPassword.equals("test123")) {
+        if (!CURRENT_PASSWORD.equals(currentPassword)) {
             Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -104,8 +122,10 @@ public class ProfileFragment extends Fragment {
         Toast.makeText(getContext(), "Password updated successfully. Please login again",
                 Toast.LENGTH_LONG).show();
 
-        NavController navController = Navigation.findNavController(requireView());
-        navController.navigate(R.id.loginFragment);
+        if (getView() != null) {
+            NavController navController = Navigation.findNavController(getView());
+            navController.navigate(R.id.loginFragment);
+        }
     }
 
     @Override
