@@ -8,6 +8,7 @@ import student.inti.librarysystem.data.entity.RoomBooking;
 import student.inti.librarysystem.repository.LibraryRepository;
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 
 public class RoomBookingViewModel extends AndroidViewModel {
     private final LibraryRepository repository;
@@ -19,8 +20,21 @@ public class RoomBookingViewModel extends AndroidViewModel {
         repository = new LibraryRepository(application);
     }
 
-    public void createBooking(RoomBooking booking) {
+    public void createBooking(String bookingStudentId, String roomNumber, Date startTime,
+                              Date endTime, String status, List<String> participantsIds,
+                              List<String> participantsNames) {
         isLoading.setValue(true);
+
+        RoomBooking booking = new RoomBooking(
+                bookingStudentId,
+                startTime,
+                endTime,
+                roomNumber,
+                status,
+                participantsIds,
+                participantsNames
+        );
+
         // Check for conflicting bookings
         List<RoomBooking> conflicts = repository.getConflictingBookings(
                 booking.getRoomNumber(),
@@ -41,7 +55,7 @@ public class RoomBookingViewModel extends AndroidViewModel {
         return repository.getStudentBookings(studentId);
     }
 
-    public LiveData<List<RoomBooking>> getRoomBookings(int roomNumber) {
+    public LiveData<List<RoomBooking>> getRoomBookings(String roomNumber) {
         return repository.getRoomBookings(roomNumber, new Date());
     }
 

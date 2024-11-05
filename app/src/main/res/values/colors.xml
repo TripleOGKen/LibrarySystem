@@ -1,14 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#1976D2</color>
-    <color name="primary_dark">#1565C0</color>
-    <color name="primary_light">#42A5F5</color>
-    <color name="accent">#FF4081</color>
-    <color name="primary_text">#212121</color>
-    <color name="secondary_text">#757575</color>
-    <color name="white">#FFFFFF</color>
-    <color name="background">#F5F5F5</color>
-    <color name="divider">#BDBDBD</color>
-    <color name="error">#D32F2F</color>
-    <color name="success">#388E3C</color>
+    <!-- Material Design Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- App Theme Colors -->
+    <color name="primary">@color/purple_500</color>
+    <color name="primary_dark">@color/purple_700</color>
+    <color name="accent">@color/teal_200</color>
+
+    <!-- Text Colors -->
+    <color name="primary_text">#DE000000</color> <!-- 87% black -->
+    <color name="secondary_text">#99000000</color> <!-- 60% black -->
+    <color name="disabled_text">#61000000</color> <!-- 38% black -->
+
+    <!-- Status Colors -->
+    <color name="status_active">#4CAF50</color>
+    <color name="status_pending">#FFA000</color>
+
+    <!-- Card and Background Colors -->
+    <color name="background">#FAFAFA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="divider">#1F000000</color> <!-- 12% black -->
+
+    <!-- Button Colors -->
+    <color name="button_enabled">#FF6200EE</color>
+    <color name="button_disabled">#61000000</color>
+
+    <!-- Error States -->
+    <color name="error">#B00020</color>
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FFA000</color>
+
+    <!-- Ripple Effect -->
+    <color name="ripple">#33000000</color>
 </resources>

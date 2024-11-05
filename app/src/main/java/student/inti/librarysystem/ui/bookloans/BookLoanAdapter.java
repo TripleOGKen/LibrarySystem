@@ -5,26 +5,44 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
-import student.inti.librarysystem.data.entity.BookLoan;
+import student.inti.librarysystem.BookLoan;
 import student.inti.librarysystem.databinding.ItemBookLoanBinding;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
-public class BookLoanAdapter extends RecyclerView.Adapter<BookLoanAdapter.BookLoanViewHolder> {
-    private List<BookLoan> loans = new ArrayList<>();
+public class BookLoanAdapter extends ListAdapter<BookLoan, BookLoanAdapter.BookLoanViewHolder> {
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private boolean isCurrentLoans;
     private final OnLoanActionListener listener;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
     public interface OnLoanActionListener {
         void onExtendClick(BookLoan loan);
     }
 
+    private static final DiffUtil.ItemCallback<BookLoan> DIFF_CALLBACK =
+            new DiffUtil.ItemCallback<BookLoan>() {
+                @Override
+                public boolean areItemsTheSame(@NonNull BookLoan oldItem, @NonNull BookLoan newItem) {
+                    return oldItem.getId().equals(newItem.getId());
+                }
+
+                @Override
+                public boolean areContentsTheSame(@NonNull BookLoan oldItem, @NonNull BookLoan newItem) {
+                    return oldItem.getReturnDate().equals(newItem.getReturnDate()) &&
+                            oldItem.getExtensionWeeks() == newItem.getExtensionWeeks();
+                }
+            };
+
     public BookLoanAdapter(OnLoanActionListener listener) {
+        super(DIFF_CALLBACK);
         this.listener = listener;
+    }
+
+    public void setCurrentLoans(boolean isCurrentLoans) {
+        this.isCurrentLoans = isCurrentLoans;
     }
 
     @NonNull
@@ -37,19 +55,7 @@ public class BookLoanAdapter extends RecyclerView.Adapter<BookLoanAdapter.BookLo
 
     @Override
     public void onBindViewHolder(@NonNull BookLoanViewHolder holder, int position) {
-        BookLoan loan = loans.get(position);
-        holder.bind(loan, isCurrentLoans);
-    }
-
-    @Override
-    public int getItemCount() {
-        return loans.size();
-    }
-
-    public void updateLoans(List<BookLoan> newLoans, boolean isCurrentLoans) {
-        this.loans = newLoans != null ? newLoans : new ArrayList<>();
-        this.isCurrentLoans = isCurrentLoans;
-        notifyDataSetChanged();
+        holder.bind(getItem(position));
     }
 
     class BookLoanViewHolder extends RecyclerView.ViewHolder {
@@ -60,49 +66,46 @@ public class BookLoanAdapter extends RecyclerView.Adapter<BookLoanAdapter.BookLo
             this.binding = binding;
         }
 
-        void bind(BookLoan loan, boolean isCurrentLoan) {
-            binding.bookNameText.setText(loan.getBookName());
-            binding.bookCodeText.setText(loan.getBookCode());
-            binding.borrowDateText.setText("Borrowed: " + dateFormat.format(loan.getBorrowDate()));
-            binding.returnDateText.setText("Return by: " + dateFormat.format(loan.getReturnDate()));
+        void bind(final BookLoan loan) {
+            // Match the IDs from item_book_loan.xml
+            binding.bookTitle.setText(loan.getBookName());
+            binding.bookCode.setText(loan.getBookCode());
+            binding.borrowDate.setText(dateFormat.format(loan.getBorrowDate()));
+            binding.dueDate.setText(dateFormat.format(loan.getReturnDate()));
 
             // Set color based on book code
-            String colorCode = getColorForBookCode(loan.getBookCode());
-            binding.bookCodeText.setBackgroundColor(Color.parseColor(colorCode));
-            binding.bookCodeText.setTextColor(Color.WHITE);
+            binding.bookCode.setBackgroundColor(getColorForBookCode(loan.getBookCode()));
+            binding.bookCode.setTextColor(Color.WHITE);
 
-            // Show/hide extend button based on whether it's a current loan
-            binding.extendButton.setVisibility(isCurrentLoan ? View.VISIBLE : View.GONE);
+            // Configure extend button visibility and extensions text
+            binding.extendButton.setVisibility(isCurrentLoans ? View.VISIBLE : View.GONE);
 
-            if (isCurrentLoan) {
-                binding.extendButton.setOnClickListener(v -> listener.onExtendClick(loan));
-                // Disable extend button if maximum extensions reached
+            if (isCurrentLoans) {
                 binding.extendButton.setEnabled(loan.getExtensionWeeks() < 3);
+                binding.extendButton.setOnClickListener(v -> listener.onExtendClick(loan));
+            }
 
-                // Show extension count if any
-                if (loan.getExtensionWeeks() > 0) {
-                    binding.extensionText.setVisibility(View.VISIBLE);
-                    binding.extensionText.setText("Extended: " + loan.getExtensionWeeks() + " week(s)");
-                } else {
-                    binding.extensionText.setVisibility(View.GONE);
-                }
+            // Show extensions if any
+            if (loan.getExtensionWeeks() > 0) {
+                binding.extensionsLeft.setVisibility(View.VISIBLE);
+                binding.extensionsLeft.setText(
+                        String.format(Locale.getDefault(),
+                                "Extended: %d week(s)",
+                                loan.getExtensionWeeks()));
             } else {
-                binding.extensionText.setVisibility(loan.getExtensionWeeks() > 0 ? View.VISIBLE : View.GONE);
-                if (loan.getExtensionWeeks() > 0) {
-                    binding.extensionText.setText("Extended: " + loan.getExtensionWeeks() + " week(s)");
-                }
+                binding.extensionsLeft.setVisibility(View.GONE);
             }
         }
 
-        private String getColorForBookCode(String bookCode) {
+        private int getColorForBookCode(String bookCode) {
             if (bookCode.startsWith("Yellow")) {
-                return "#FFA000"; // Dark Yellow
+                return Color.parseColor("#FFA000"); // Yellow
             } else if (bookCode.startsWith("Green")) {
-                return "#4CAF50"; // Green
+                return Color.parseColor("#4CAF50"); // Green
             } else if (bookCode.startsWith("Blue")) {
-                return "#2196F3"; // Blue
+                return Color.parseColor("#2196F3"); // Blue
             }
-            return "#757575"; // Grey (default)
+            return Color.parseColor("#757575"); // Default gray
         }
     }
 }

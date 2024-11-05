@@ -1,8 +1,10 @@
 package student.inti.librarysystem.ui.roombooking;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,68 +12,53 @@ import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.firebase.firestore.FirebaseFirestore;
+import student.inti.librarysystem.R;
+import student.inti.librarysystem.RoomBooking;
 import student.inti.librarysystem.databinding.FragmentRoomBookingBinding;
 import student.inti.librarysystem.util.FirebaseManager;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
-public class RoomBookingFragment extends Fragment {
+public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.OnBookingClickListener {
     private FragmentRoomBookingBinding binding;
-    private RoomBookingViewModel viewModel;
+    private RoomBookingAdapter adapter;
     private final Calendar selectedDateTime = Calendar.getInstance();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
     private FirebaseFirestore db;
     private String currentStudentId;
-    private RoomBookingAdapter bookingAdapter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = FragmentRoomBookingBinding.inflate(inflater, container, false);
-        viewModel = new ViewModelProvider(this).get(RoomBookingViewModel.class);
         db = FirebaseFirestore.getInstance();
 
-        // Get current student ID
-        FirebaseManager firebaseManager = FirebaseManager.getInstance();
-        currentStudentId = firebaseManager.getCurrentUser().getEmail().split("@")[0].toUpperCase();
+        // Safely get current student ID
+        String email = Objects.requireNonNull(
+                FirebaseManager.getInstance().getCurrentUser()).getEmail();
+        currentStudentId = email != null ? email.split("@")[0].toUpperCase() : "";
 
         setupRoomSpinner();
         setupDateTimePickers();
-        setupBookingButton();
         setupRecyclerView();
+        setupBookingButton();
         loadUserBookings();
 
         return binding.getRoot();
     }
 
     private void setupRecyclerView() {
-        bookingAdapter = new RoomBookingAdapter(booking -> showBookingDetails(booking));
-        binding.bookingsRecyclerView.setAdapter(bookingAdapter);
+        adapter = new RoomBookingAdapter(this);
+        binding.bookingsRecyclerView.setAdapter(adapter);
         binding.bookingsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-    }
-
-    private void showBookingDetails(RoomBooking booking) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Booking Details")
-                .setMessage(
-                        "Room: " + booking.getRoomNumber() + "\n" +
-                                "Date: " + dateFormat.format(booking.getStartTime()) + "\n" +
-                                "Time: " + timeFormat.format(booking.getStartTime()) + " - " +
-                                timeFormat.format(booking.getEndTime()) + "\n" +
-                                "Participants: " + booking.getParticipantsNames()
-                )
-                .setPositiveButton("OK", null)
-                .show();
     }
 
     private void setupRoomSpinner() {
@@ -108,36 +95,38 @@ public class RoomBookingFragment extends Fragment {
                     selectedDateTime.set(Calendar.MONTH, month);
                     selectedDateTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
                     binding.dateInput.setText(dateFormat.format(selectedDateTime.getTime()));
-                },
-                selectedDateTime.get(Calendar.YEAR),
+                }, selectedDateTime.get(Calendar.YEAR),
                 selectedDateTime.get(Calendar.MONTH),
                 selectedDateTime.get(Calendar.DAY_OF_MONTH));
 
-        // Set min date to today
         datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
-        // Set max date to 7 days from today
         datePickerDialog.getDatePicker().setMaxDate(maxDate.getTimeInMillis());
-
         datePickerDialog.show();
     }
 
     private void showTimePicker(boolean isStartTime) {
-        new TimePickerDialog(requireContext(), (view, hourOfDay, minute) -> {
-            Calendar cal = Calendar.getInstance();
-            cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            cal.set(Calendar.MINUTE, minute);
+        TimePickerDialog timePickerDialog = new TimePickerDialog(requireContext(),
+                (view, hourOfDay, minute) -> {
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(Calendar.YEAR, selectedDateTime.get(Calendar.YEAR));
+                    cal.set(Calendar.MONTH, selectedDateTime.get(Calendar.MONTH));
+                    cal.set(Calendar.DAY_OF_MONTH, selectedDateTime.get(Calendar.DAY_OF_MONTH));
+                    cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    cal.set(Calendar.MINUTE, minute);
 
-            if (isStartTime) {
-                binding.startTimeInput.setText(timeFormat.format(cal.getTime()));
-                // Set end time to 2 hours after start time
-                cal.add(Calendar.HOUR_OF_DAY, 2);
-                binding.endTimeInput.setText(timeFormat.format(cal.getTime()));
-            } else {
-                binding.endTimeInput.setText(timeFormat.format(cal.getTime()));
-            }
-        }, selectedDateTime.get(Calendar.HOUR_OF_DAY),
-                selectedDateTime.get(Calendar.MINUTE), true)
-                .show();
+                    if (isStartTime) {
+                        binding.startTimeInput.setText(timeFormat.format(cal.getTime()));
+                        // Set end time to 2 hours after start time
+                        cal.add(Calendar.HOUR_OF_DAY, 2);
+                        binding.endTimeInput.setText(timeFormat.format(cal.getTime()));
+                    } else {
+                        binding.endTimeInput.setText(timeFormat.format(cal.getTime()));
+                    }
+                }, selectedDateTime.get(Calendar.HOUR_OF_DAY),
+                selectedDateTime.get(Calendar.MINUTE),
+                true);
+
+        timePickerDialog.show();
     }
 
     private void setupBookingButton() {
@@ -149,11 +138,15 @@ public class RoomBookingFragment extends Fragment {
     }
 
     private boolean validateBookingInputs() {
-        if (binding.dateInput.getText().toString().isEmpty() ||
-                binding.startTimeInput.getText().toString().isEmpty() ||
-                binding.endTimeInput.getText().toString().isEmpty() ||
-                binding.participantNamesInput.getText().toString().isEmpty() ||
-                binding.participantIdsInput.getText().toString().isEmpty()) {
+        String date = binding.dateInput.getText().toString();
+        String startTime = binding.startTimeInput.getText().toString();
+        String endTime = binding.endTimeInput.getText().toString();
+        String participantNames = binding.participantNamesInput.getText().toString();
+        String participantIds = binding.participantIdsInput.getText().toString();
+
+        if (TextUtils.isEmpty(date) || TextUtils.isEmpty(startTime) ||
+                TextUtils.isEmpty(endTime) || TextUtils.isEmpty(participantNames) ||
+                TextUtils.isEmpty(participantIds)) {
             Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -165,28 +158,30 @@ public class RoomBookingFragment extends Fragment {
         String participantsNames = binding.participantNamesInput.getText().toString();
         String participantsIds = binding.participantIdsInput.getText().toString();
 
-        // Create calendar instances for start and end times
+        // Parse date and times
         Calendar startCal = (Calendar) selectedDateTime.clone();
         Calendar endCal = (Calendar) selectedDateTime.clone();
 
-        // Parse times
         String[] startTimeParts = binding.startTimeInput.getText().toString().split(":");
         String[] endTimeParts = binding.endTimeInput.getText().toString().split(":");
 
         startCal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(startTimeParts[0]));
         startCal.set(Calendar.MINUTE, Integer.parseInt(startTimeParts[1]));
+
         endCal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endTimeParts[0]));
         endCal.set(Calendar.MINUTE, Integer.parseInt(endTimeParts[1]));
 
+        // Create booking data matching Firebase fields exactly
         Map<String, Object> booking = new HashMap<>();
+        booking.put("bookingStudentId", currentStudentId);
+        booking.put("endTime", endCal.getTime());
+        booking.put("participantsIds", participantsIds);
+        booking.put("participantsNames", participantsNames);
         booking.put("roomNumber", roomNumber);
         booking.put("startTime", startCal.getTime());
-        booking.put("endTime", endCal.getTime());
-        booking.put("bookingStudentId", currentStudentId);
-        booking.put("participantsNames", participantsNames);
-        booking.put("participantsIds", participantsIds);
         booking.put("status", "Active");
 
+        // Save to Firebase
         db.collection("roomBookings")
                 .add(booking)
                 .addOnSuccessListener(documentReference -> {
@@ -194,9 +189,9 @@ public class RoomBookingFragment extends Fragment {
                     clearInputs();
                     loadUserBookings();
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to create booking", Toast.LENGTH_SHORT).show()
-                );
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to create booking", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void clearInputs() {
@@ -211,16 +206,28 @@ public class RoomBookingFragment extends Fragment {
         db.collection("roomBookings")
                 .whereEqualTo("bookingStudentId", currentStudentId)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<RoomBooking> bookings = new ArrayList<>();
-                    queryDocumentSnapshots.forEach(doc -> {
-                        RoomBooking booking = doc.toObject(RoomBooking.class);
-                        bookings.add(booking);
-                    });
-                    bookingAdapter.submitList(bookings);
-                    binding.noBookingsText.setVisibility(
-                            bookings.isEmpty() ? View.VISIBLE : View.GONE);
+                .addOnSuccessListener(querySnapshot -> {
+                    adapter.submitList(querySnapshot.toObjects(RoomBooking.class));
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to load bookings", Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    @Override
+    public void onBookingClick(RoomBooking booking) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Booking Details")
+                .setMessage(String.format(Locale.getDefault(),
+                        "Room: %s\nDate: %s\nTime: %s - %s\nParticipants: %s\nStatus: %s",
+                        booking.getRoomNumber(),
+                        dateFormat.format(booking.getStartTime()),
+                        timeFormat.format(booking.getStartTime()),
+                        timeFormat.format(booking.getEndTime()),
+                        booking.getParticipantsNames(),
+                        booking.getStatus()))
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     @Override

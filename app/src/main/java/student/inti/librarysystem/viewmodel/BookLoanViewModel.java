@@ -34,7 +34,7 @@ public class BookLoanViewModel extends AndroidViewModel {
         }
 
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(loan.getDueDate());
+        calendar.setTime(loan.getReturnDate());
         calendar.add(Calendar.WEEK_OF_YEAR, weeks);
         Date newDueDate = calendar.getTime();
 

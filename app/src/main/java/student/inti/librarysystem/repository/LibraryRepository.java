@@ -26,12 +26,11 @@ public class LibraryRepository {
         executorService = Executors.newFixedThreadPool(4);
     }
 
-    // Add this method for login functionality
-    public Student loginStudent(String studentId, String password) {
-        return studentDao.login(studentId, password);
+    // Student operations
+    public Student loginStudent(String studentId, String hashedPassword) {
+        return studentDao.login(studentId, hashedPassword);
     }
 
-    // Student operations
     public void insertStudent(Student student) {
         executorService.execute(() -> studentDao.insert(student));
     }
@@ -44,8 +43,8 @@ public class LibraryRepository {
         executorService.execute(() -> studentDao.update(student));
     }
 
-    public void updatePassword(String studentId, String newPassword) {
-        executorService.execute(() -> studentDao.updatePassword(studentId, newPassword));
+    public void updatePassword(String studentId, String oldPassword, String newPassword) {
+        executorService.execute(() -> studentDao.updatePassword(studentId, oldPassword, newPassword));
     }
 
     public void updateProfilePicture(String studentId, String picturePath) {
@@ -61,11 +60,11 @@ public class LibraryRepository {
         return roomBookingDao.getStudentBookings(studentId);
     }
 
-    public LiveData<List<RoomBooking>> getRoomBookings(int roomNumber, Date today) {
+    public LiveData<List<RoomBooking>> getRoomBookings(String roomNumber, Date today) {
         return roomBookingDao.getRoomBookings(roomNumber, today);
     }
 
-    public List<RoomBooking> getConflictingBookings(int roomNumber, Date startTime, Date endTime) {
+    public List<RoomBooking> getConflictingBookings(String roomNumber, Date startTime, Date endTime) {
         return roomBookingDao.getConflictingBookings(roomNumber, startTime, endTime);
     }
 
@@ -78,7 +77,7 @@ public class LibraryRepository {
         return bookLoanDao.getStudentLoans(studentId);
     }
 
-    public void extendLoan(long loanId, Date newDueDate, int extensionWeeks) {
+    public void extendLoan(String loanId, Date newDueDate, int extensionWeeks) {
         executorService.execute(() -> bookLoanDao.extendLoan(loanId, newDueDate, extensionWeeks));
     }
 

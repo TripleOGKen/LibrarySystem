@@ -3,10 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginVertical="4dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,42 +13,38 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Subject Name -->
         <TextView
-            android:id="@+id/course_code"
+            android:id="@+id/subject_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textSize="16sp"/>
+            android:textSize="18sp"
+            android:textStyle="bold"/>
 
+        <!-- Paper Code -->
         <TextView
-            android:id="@+id/course_name"
+            android:id="@+id/paper_code"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textSize="14sp"/>
+            android:textColor="@color/secondary_text"/>
 
-        <LinearLayout
+        <!-- Year -->
+        <TextView
+            android:id="@+id/paper_year"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="4dp"
+            android:textColor="@color/secondary_text"/>
 
-            <TextView
-                android:id="@+id/year_semester"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="14sp"
-                android:textColor="@color/secondary_text"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/download_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Download"
-                style="@style/Widget.MaterialComponents.Button.TextButton"/>
-
-        </LinearLayout>
+        <!-- Download Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/download_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/download"
+            style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
     </LinearLayout>
 

@@ -12,7 +12,7 @@ public class BookLoanService {
     public static void scheduleDueReminder(Context context, BookLoan loan, String bookTitle) {
         // Schedule reminder for 1 day before due date
         Calendar dueDate = Calendar.getInstance();
-        dueDate.setTime(loan.getDueDate());
+        dueDate.setTime(loan.getReturnDate());
         dueDate.add(Calendar.DAY_OF_MONTH, -1);
 
         long delayMillis = dueDate.getTimeInMillis() - System.currentTimeMillis();

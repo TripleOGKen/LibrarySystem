@@ -29,8 +29,8 @@ public class ProfileViewModel extends AndroidViewModel {
     public void updatePassword(String studentId, String oldPassword, String newPassword) {
         isLoading.setValue(true);
         repository.getStudent(studentId).observeForever(student -> {
-            if (student != null && student.getPassword().equals(oldPassword)) {
-                repository.updatePassword(studentId, newPassword);
+            if (student != null && student.getHashedPassword().equals(oldPassword)) {
+                repository.updatePassword(studentId, oldPassword, newPassword);
                 updateResult.setValue("Password updated successfully");
             } else {
                 updateResult.setValue("Current password is incorrect");

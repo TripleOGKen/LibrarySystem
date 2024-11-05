@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,12 +26,14 @@ import student.inti.librarysystem.R;
 import student.inti.librarysystem.databinding.FragmentProfileBinding;
 import student.inti.librarysystem.util.FirebaseManager;
 import student.inti.librarysystem.model.Student;
+import android.util.Base64;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Base64;
+import java.util.Objects;
 
 public class ProfileFragment extends Fragment {
+    private static final String TAG = "ProfileFragment";
     private FragmentProfileBinding binding;
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private FirebaseFirestore db;
@@ -45,9 +48,10 @@ public class ProfileFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
 
-        // Get current student ID from Firebase Auth
-        FirebaseManager firebaseManager = FirebaseManager.getInstance();
-        currentStudentId = firebaseManager.getCurrentUser().getEmail().split("@")[0].toUpperCase();
+        // Safely get current student ID
+        String email = Objects.requireNonNull(
+                FirebaseManager.getInstance().getCurrentUser()).getEmail();
+        currentStudentId = email != null ? email.split("@")[0].toUpperCase() : "";
     }
 
     @Override
@@ -88,15 +92,15 @@ public class ProfileFragment extends Fragment {
                         updateUIWithStudentData();
                     }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show()
-                );
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading profile", e);
+                    Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void updateUIWithStudentData() {
-        binding.studentIdText.setText(currentStudent.getStudentId());
-        binding.nameText.setText(currentStudent.getName());
-        binding.emailText.setText(currentStudent.getEmail());
+        binding.studentIdInput.setText(currentStudent.getStudentId());
+        binding.emailInput.setText(currentStudent.getEmail());
 
         if (currentStudent.getProfileImageUrl() != null && !currentStudent.getProfileImageUrl().isEmpty()) {
             Glide.with(this)
@@ -117,9 +121,6 @@ public class ProfileFragment extends Fragment {
     private void handleImageResult(Uri imageUri) {
         if (getContext() == null) return;
 
-        // Show loading indicator
-        binding.progressBar.setVisibility(View.VISIBLE);
-
         StorageReference storageRef = storage.getReference()
                 .child("profile_pictures")
                 .child(currentStudentId + ".jpg");
@@ -134,13 +135,12 @@ public class ProfileFragment extends Fragment {
                                     .addOnSuccessListener(aVoid -> {
                                         currentStudent.setProfileImageUrl(imageUrl);
                                         updateUIWithStudentData();
-                                        binding.progressBar.setVisibility(View.GONE);
                                         Toast.makeText(getContext(),
                                                 "Profile picture updated",
                                                 Toast.LENGTH_SHORT).show();
                                     })
                                     .addOnFailureListener(e -> {
-                                        binding.progressBar.setVisibility(View.GONE);
+                                        Log.e(TAG, "Failed to update profile URL", e);
                                         Toast.makeText(getContext(),
                                                 "Failed to update profile picture",
                                                 Toast.LENGTH_SHORT).show();
@@ -148,7 +148,7 @@ public class ProfileFragment extends Fragment {
                         })
                 )
                 .addOnFailureListener(e -> {
-                    binding.progressBar.setVisibility(View.GONE);
+                    Log.e(TAG, "Failed to upload profile picture", e);
                     Toast.makeText(getContext(),
                             "Failed to upload profile picture",
                             Toast.LENGTH_SHORT).show();
@@ -156,26 +156,18 @@ public class ProfileFragment extends Fragment {
     }
 
     private void attemptPasswordChange() {
-        String currentPassword = binding.currentPasswordInput.getText().toString();
-        String newPassword = binding.newPasswordInput.getText().toString();
-        String confirmPassword = binding.confirmPasswordInput.getText().toString();
-
-        if (TextUtils.isEmpty(currentPassword) || TextUtils.isEmpty(newPassword) ||
-                TextUtils.isEmpty(confirmPassword)) {
-            Toast.makeText(getContext(), "Please fill in all password fields", Toast.LENGTH_SHORT).show();
+        if (!validatePasswordInputs()) {
             return;
         }
 
-        if (!newPassword.equals(confirmPassword)) {
-            Toast.makeText(getContext(), "New passwords do not match", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        String currentPassword = Objects.requireNonNull(binding.currentPasswordInput.getText()).toString();
+        String newPassword = Objects.requireNonNull(binding.newPasswordInput.getText()).toString();
 
         // Verify current password
         String currentSalt = currentStudent.getSalt();
         String hashedCurrentPassword = hashPassword(currentPassword, currentSalt);
 
-        if (!hashedCurrentPassword.equals(currentStudent.getHashedPassword())) {
+        if (!Objects.equals(hashedCurrentPassword, currentStudent.getHashedPassword())) {
             Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -198,33 +190,46 @@ public class ProfileFragment extends Fragment {
 
                     // Sign out and navigate to login
                     FirebaseManager.getInstance().signOut();
-                    if (getView() != null) {
-                        NavController navController = Navigation.findNavController(getView());
-                        navController.navigate(R.id.loginFragment);
-                    }
+                    NavController navController = Navigation.findNavController(requireView());
+                    navController.navigate(R.id.loginFragment);
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(),
-                                "Failed to update password",
-                                Toast.LENGTH_SHORT).show()
-                );
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to update password", e);
+                    Toast.makeText(getContext(),
+                            "Failed to update password",
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private boolean validatePasswordInputs() {
+        String currentPassword = binding.currentPasswordInput.getText() != null ?
+                binding.currentPasswordInput.getText().toString() : "";
+        String newPassword = binding.newPasswordInput.getText() != null ?
+                binding.newPasswordInput.getText().toString() : "";
+
+        if (TextUtils.isEmpty(currentPassword) || TextUtils.isEmpty(newPassword)) {
+            Toast.makeText(getContext(), "Please fill in all password fields", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        return true;
     }
 
     private String generateSalt() {
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[16];
         random.nextBytes(salt);
-        return Base64.getEncoder().encodeToString(salt);
+        return android.util.Base64.encodeToString(salt, android.util.Base64.NO_WRAP);
     }
 
     private String hashPassword(String password, String salt) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(Base64.getDecoder().decode(salt));
+            md.update(android.util.Base64.decode(salt, android.util.Base64.NO_WRAP));
             byte[] hashedPassword = md.digest(password.getBytes());
-            return Base64.getEncoder().encodeToString(hashedPassword);
+            return android.util.Base64.encodeToString(hashedPassword, android.util.Base64.NO_WRAP);
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Failed to hash password", e);
             return null;
         }
     }

@@ -16,4 +16,7 @@
     <string name="one_week">1 Week</string>
     <string name="two_weeks">2 Weeks</string>
     <string name="three_weeks">3 Weeks</string>
+    <string name="room_booking_time_format">%s - %s</string>
+    <string name="profile_image">Profile Image</string>
+    <string name="download">Download</string>
 </resources>
