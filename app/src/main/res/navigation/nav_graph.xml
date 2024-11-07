@@ -4,6 +4,7 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/loginFragment">
 
+    <!-- Login Fragment -->
     <fragment
         android:id="@+id/loginFragment"
         android:name="student.inti.librarysystem.ui.login.LoginFragment"
@@ -15,23 +16,35 @@
             app:popUpToInclusive="true" />
     </fragment>
 
+    <!-- Profile Fragment -->
     <fragment
         android:id="@+id/profileFragment"
         android:name="student.inti.librarysystem.ui.profile.ProfileFragment"
         android:label="Profile" />
 
+    <!-- Room Booking Fragment -->
     <fragment
         android:id="@+id/roomBookingFragment"
         android:name="student.inti.librarysystem.ui.roombooking.RoomBookingFragment"
         android:label="Room Booking" />
 
+    <!-- Book Loans Fragment -->
     <fragment
         android:id="@+id/bookLoansFragment"
         android:name="student.inti.librarysystem.ui.bookloans.BookLoansFragment"
         android:label="Book Loans" />
 
+    <!-- Exam Papers Fragment -->
     <fragment
         android:id="@+id/examPapersFragment"
         android:name="student.inti.librarysystem.ui.exams.ExamPapersFragment"
         android:label="Past Year Papers" />
+
+    <!-- Global Action for Logout -->
+    <action
+        android:id="@+id/action_global_loginFragment"
+        app:destination="@id/loginFragment"
+        app:popUpTo="@id/nav_graph"
+        app:popUpToInclusive="true" />
+
 </navigation>

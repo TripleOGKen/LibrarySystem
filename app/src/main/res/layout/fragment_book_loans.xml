@@ -14,8 +14,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?attr/colorPrimary"
-            app:tabTextColor="@android:color/white"
-            app:tabSelectedTextColor="@android:color/white">
+            app:tabTextColor="#80FFFFFF"
+            app:tabSelectedTextColor="@color/white"
+            app:tabIndicatorColor="@color/white"
+            app:tabIndicatorHeight="3dp"
+            app:tabRippleColor="@android:color/transparent"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabTextAppearance="@style/CustomTabTextAppearance">
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"

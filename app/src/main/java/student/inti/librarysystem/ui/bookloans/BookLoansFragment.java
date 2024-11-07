@@ -52,23 +52,38 @@ public class BookLoansFragment extends Fragment implements BookLoanAdapter.OnLoa
         adapter = new BookLoanAdapter(this);
         binding.loansRecyclerView.setAdapter(adapter);
         binding.loansRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // Update the adapter's current loans state
+        adapter.setCurrentLoans(true); // Set default to current loans
     }
 
     private void setupTabLayout() {
+        // Set initial state
         binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 isCurrentLoans = tab.getPosition() == 0;
                 adapter.setCurrentLoans(isCurrentLoans);
                 loadBookLoans();
+
+                // Update tab appearance
+                tab.view.setAlpha(1f);
             }
 
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {}
+            public void onTabUnselected(TabLayout.Tab tab) {
+                tab.view.setAlpha(0.5f);
+            }
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {}
         });
+
+        // Set initial tab state
+        TabLayout.Tab initialTab = binding.tabLayout.getTabAt(0);
+        if (initialTab != null) {
+            initialTab.select();
+        }
     }
 
     private void loadBookLoans() {

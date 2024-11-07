@@ -10,11 +10,11 @@ import student.inti.librarysystem.data.entity.*;
 import student.inti.librarysystem.util.DateConverter;
 
 @Database(entities = {
-        Student.class,
-        RoomBooking.class,
-        BookLoan.class,
-        ExamPaper.class,
-        Book.class
+        student.inti.librarysystem.data.entity.Student.class,
+        student.inti.librarysystem.data.entity.RoomBooking.class,
+        student.inti.librarysystem.data.entity.BookLoan.class,
+        student.inti.librarysystem.data.entity.ExamPaper.class,
+        student.inti.librarysystem.data.entity.Book.class
 }, version = 2, // Increased from 1 to 2
         exportSchema = false)
 @TypeConverters({DateConverter.class})

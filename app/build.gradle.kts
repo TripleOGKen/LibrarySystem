@@ -101,6 +101,8 @@ dependencies {
     implementation ("com.google.firebase:firebase-firestore:24.10.0")
     implementation ("com.google.firebase:firebase-auth:22.3.0")
     implementation("com.google.firebase:firebase-storage")
+    implementation ("com.google.android.gms:play-services-tasks:18.0.2")
+
 
     tasks.register("printDebugSigningReport") {
         doLast {

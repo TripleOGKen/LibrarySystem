@@ -27,10 +27,9 @@ public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdap
     }
 
     private static final DiffUtil.ItemCallback<RoomBooking> DIFF_CALLBACK =
-            new DiffUtil.ItemCallback<RoomBooking>() {
+            new DiffUtil.ItemCallback<>() {
                 @Override
                 public boolean areItemsTheSame(@NonNull RoomBooking oldItem, @NonNull RoomBooking newItem) {
-                    // Using getId() as that's the name in your RoomBooking class
                     return oldItem.getId() != null && oldItem.getId().equals(newItem.getId());
                 }
 
@@ -48,48 +47,58 @@ public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdap
                         LayoutInflater.from(parent.getContext()),
                         parent,
                         false
-                )
+                ),
+                listener
         );
     }
 
     @Override
     public void onBindViewHolder(@NonNull BookingViewHolder holder, int position) {
-        holder.bind(getItem(position));
+        holder.bind(getItem(position), dateFormat, timeFormat);
     }
 
-    class BookingViewHolder extends RecyclerView.ViewHolder {
+    public static class BookingViewHolder extends RecyclerView.ViewHolder {
         private final ItemRoomBookingBinding binding;
+        private final OnBookingClickListener listener;
 
-        BookingViewHolder(ItemRoomBookingBinding binding) {
+        BookingViewHolder(ItemRoomBookingBinding binding, OnBookingClickListener listener) {
             super(binding.getRoot());
             this.binding = binding;
+            this.listener = listener;
+
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION) {
-                    listener.onBookingClick(getItem(position));
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onBookingClick((RoomBooking) itemView.getTag());
                 }
             });
         }
 
-        void bind(RoomBooking booking) {
-            // Using null checks to prevent NPEs
+        void bind(RoomBooking booking, SimpleDateFormat dateFormat, SimpleDateFormat timeFormat) {
             if (booking != null) {
-                binding.roomNumber.setText(booking.getRoomNumber());
+                itemView.setTag(booking);
+
+                // Use String.format with explicit Locale
+                binding.roomNumber.setText(String.format(Locale.getDefault(),
+                        "Discussion Room %d", booking.getRoomNumber()));
 
                 if (booking.getStartTime() != null) {
                     binding.bookingDate.setText(dateFormat.format(booking.getStartTime()));
-                    binding.bookingTime.setText(String.format("%s - %s",
+                    binding.bookingTime.setText(String.format(Locale.getDefault(),
+                            "%s - %s",
                             timeFormat.format(booking.getStartTime()),
-                            booking.getEndTime() != null ? timeFormat.format(booking.getEndTime()) : ""));
+                            booking.getEndTime() != null ?
+                                    timeFormat.format(booking.getEndTime()) : ""));
                 }
 
                 binding.bookingStatus.setText(booking.getStatus());
 
-                // Set status background
                 if ("Active".equals(booking.getStatus())) {
-                    binding.bookingStatus.setBackgroundResource(R.drawable.status_active_background);
+                    binding.bookingStatus.setBackgroundResource(
+                            R.drawable.status_active_background);
                 } else {
-                    binding.bookingStatus.setBackgroundResource(R.drawable.status_pending_background);
+                    binding.bookingStatus.setBackgroundResource(
+                            R.drawable.status_pending_background);
                 }
             }
         }

@@ -6,6 +6,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
+import android.util.Log;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import android.util.Base64;
 
 public class FirebaseManager {
     private static FirebaseManager instance;
@@ -63,4 +68,24 @@ public class FirebaseManager {
                 .document(studentId.toUpperCase())
                 .get();
     }
+
+    public static String hashPassword(String password, String salt) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(Base64.decode(salt, Base64.NO_WRAP));
+            byte[] hashedPassword = md.digest(password.getBytes());
+            return Base64.encodeToString(hashedPassword, Base64.NO_WRAP);
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, "Failed to hash password", e);
+            return null;
+        }
+    }
+
+    public static String generateSalt() {
+        SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        return Base64.encodeToString(salt, Base64.NO_WRAP);
+    }
+
 }

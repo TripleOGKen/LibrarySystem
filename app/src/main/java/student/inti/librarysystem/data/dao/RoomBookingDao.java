@@ -8,7 +8,7 @@ import java.util.List;
 
 @Dao
 public interface RoomBookingDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(RoomBooking booking);
 
     @Update

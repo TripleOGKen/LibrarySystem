@@ -11,15 +11,23 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.UUID;
+import student.inti.librarysystem.util.FirebaseManager;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ProfileViewModel extends AndroidViewModel {
     private final LibraryRepository repository;
     private final MutableLiveData<String> updateResult = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final FirebaseAuth firebaseAuth;
 
     public ProfileViewModel(Application application) {
         super(application);
         repository = new LibraryRepository(application);
+        firebaseAuth = FirebaseAuth.getInstance();
     }
 
     public LiveData<Student> getStudentProfile(String studentId) {
@@ -28,16 +36,81 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public void updatePassword(String studentId, String oldPassword, String newPassword) {
         isLoading.setValue(true);
-        repository.getStudent(studentId).observeForever(student -> {
-            if (student != null && student.getHashedPassword().equals(oldPassword)) {
-                repository.updatePassword(studentId, oldPassword, newPassword);
-                updateResult.setValue("Password updated successfully");
-            } else {
-                updateResult.setValue("Current password is incorrect");
-            }
+
+        // Get current Firebase user
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user == null) {
+            updateResult.setValue("User not logged in");
             isLoading.setValue(false);
-        });
+            return;
+        }
+
+        // Create credential for reauthentication
+        String email = studentId.toLowerCase() + "@student.newinti.edu.my";
+        AuthCredential credential = EmailAuthProvider.getCredential(email, oldPassword);
+
+        // First get the student data from Firestore directly
+        FirebaseFirestore.getInstance()
+                .collection("students")
+                .document(studentId.toUpperCase())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        updateResult.setValue("Student data not found");
+                        isLoading.setValue(false);
+                        return;
+                    }
+
+                    String salt = documentSnapshot.getString("salt");
+                    if (salt == null) {
+                        // Generate new salt if not exists
+                        salt = FirebaseManager.generateSalt();
+                    }
+
+                    // Store the salt for later use
+                    String finalSalt = salt;
+
+
+                    // Reauthenticate and update password
+                    user.reauthenticate(credential)
+                            .addOnSuccessListener(aVoid -> {
+                                // Reauthentication successful, now update password
+                                user.updatePassword(newPassword)
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            // Also update the hashed password in Firestore
+                                            String newHashedPassword = FirebaseManager.hashPassword(newPassword, finalSalt);
+                                            FirebaseFirestore.getInstance()
+                                                    .collection("students")
+                                                    .document(studentId.toUpperCase())
+                                                    .update(
+                                                            "hashedPassword", newHashedPassword,
+                                                            "salt", finalSalt
+                                                    )
+                                                    .addOnSuccessListener(aVoid3 -> {
+                                                        updateResult.setValue("Password updated successfully");
+                                                        isLoading.setValue(false);
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        updateResult.setValue("Failed to update password in database");
+                                                        isLoading.setValue(false);
+                                                    });
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            updateResult.setValue("Failed to update password: " + e.getMessage());
+                                            isLoading.setValue(false);
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                updateResult.setValue("Current password is incorrect");
+                                isLoading.setValue(false);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    updateResult.setValue("Failed to fetch student data");
+                    isLoading.setValue(false);
+                });
     }
+
 
     public void updateProfilePicture(String studentId, Uri imageUri) {
         isLoading.setValue(true);
@@ -46,7 +119,7 @@ public class ProfileViewModel extends AndroidViewModel {
             File outputDir = getApplication().getFilesDir();
             File outputFile = new File(outputDir, "profile_" + UUID.randomUUID().toString() + ".jpg");
 
-            // Copy the selected image to the app's private directory
+            // Copy the contents of the imageUri to the output file
             InputStream inputStream = getApplication().getContentResolver().openInputStream(imageUri);
             FileOutputStream outputStream = new FileOutputStream(outputFile);
             byte[] buffer = new byte[1024];
@@ -54,14 +127,14 @@ public class ProfileViewModel extends AndroidViewModel {
             while ((length = inputStream.read(buffer)) > 0) {
                 outputStream.write(buffer, 0, length);
             }
-            outputStream.close();
             inputStream.close();
+            outputStream.close();
 
-            // Update the profile picture path in the database
+            // Update the profile picture in the repository
             repository.updateProfilePicture(studentId, outputFile.getAbsolutePath());
             updateResult.setValue("Profile picture updated successfully");
         } catch (Exception e) {
-            updateResult.setValue("Failed to update profile picture: " + e.getMessage());
+            updateResult.setValue("Failed to update profile picture");
         } finally {
             isLoading.setValue(false);
         }

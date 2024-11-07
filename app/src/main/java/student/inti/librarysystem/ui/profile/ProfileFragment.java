@@ -31,6 +31,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Objects;
+import student.inti.librarysystem.viewmodel.ProfileViewModel;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import student.inti.librarysystem.viewmodel.ProfileViewModel;
+
+
 
 public class ProfileFragment extends Fragment {
     private static final String TAG = "ProfileFragment";
@@ -40,6 +47,9 @@ public class ProfileFragment extends Fragment {
     private FirebaseStorage storage;
     private String currentStudentId;
     private Student currentStudent;
+    private ProfileViewModel profileViewModel;
+    private FirebaseAuth firebaseAuth;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -58,6 +68,36 @@ public class ProfileFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = FragmentProfileBinding.inflate(inflater, container, false);
+        profileViewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        firebaseAuth = FirebaseAuth.getInstance();
+
+        // Add observers for ProfileViewModel
+        profileViewModel.getUpdateResult().observe(getViewLifecycleOwner(), result -> {
+            if (result.equals("Password updated successfully")) {
+                Toast.makeText(getContext(),
+                        "Password updated successfully. Please login again.",
+                        Toast.LENGTH_LONG).show();
+
+                // Sign out and navigate to login
+                FirebaseManager.getInstance().signOut();
+                NavController navController = Navigation.findNavController(requireView());
+                navController.navigate(R.id.loginFragment);
+            } else {
+                Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+                // If password is incorrect, show error on the field
+                if (result.equals("Current password is incorrect")) {
+                    binding.currentPasswordInput.setError("Incorrect password");
+                }
+            }
+        });
+
+        profileViewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            binding.progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            // Disable buttons during loading
+            binding.changePasswordButton.setEnabled(!isLoading);
+            binding.changePhotoButton.setEnabled(!isLoading);
+        });
+
         setupViews();
         loadUserProfile();
         return binding.getRoot();
@@ -163,42 +203,16 @@ public class ProfileFragment extends Fragment {
         String currentPassword = Objects.requireNonNull(binding.currentPasswordInput.getText()).toString();
         String newPassword = Objects.requireNonNull(binding.newPasswordInput.getText()).toString();
 
-        // Verify current password
-        String currentSalt = currentStudent.getSalt();
-        String hashedCurrentPassword = hashPassword(currentPassword, currentSalt);
+        // Clear any previous error messages
+        binding.currentPasswordInput.setError(null);
+        binding.newPasswordInput.setError(null);
 
-        if (!Objects.equals(hashedCurrentPassword, currentStudent.getHashedPassword())) {
-            Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Use ProfileViewModel to update password
+        profileViewModel.updatePassword(currentStudentId, currentPassword, newPassword);
 
-        // Generate new salt and hash for new password
-        String newSalt = generateSalt();
-        String hashedNewPassword = hashPassword(newPassword, newSalt);
-
-        // Update password in Firestore
-        db.collection("students")
-                .document(currentStudentId)
-                .update(
-                        "hashedPassword", hashedNewPassword,
-                        "salt", newSalt
-                )
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(getContext(),
-                            "Password updated successfully. Please login again.",
-                            Toast.LENGTH_LONG).show();
-
-                    // Sign out and navigate to login
-                    FirebaseManager.getInstance().signOut();
-                    NavController navController = Navigation.findNavController(requireView());
-                    navController.navigate(R.id.loginFragment);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to update password", e);
-                    Toast.makeText(getContext(),
-                            "Failed to update password",
-                            Toast.LENGTH_SHORT).show();
-                });
+        // Clear password fields for security
+        binding.currentPasswordInput.setText("");
+        binding.newPasswordInput.setText("");
     }
 
     private boolean validatePasswordInputs() {

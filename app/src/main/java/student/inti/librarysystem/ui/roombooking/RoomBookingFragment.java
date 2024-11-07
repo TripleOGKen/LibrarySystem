@@ -12,6 +12,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.firebase.firestore.FirebaseFirestore;
 import student.inti.librarysystem.R;
@@ -20,11 +21,13 @@ import student.inti.librarysystem.databinding.FragmentRoomBookingBinding;
 import student.inti.librarysystem.util.FirebaseManager;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
+import student.inti.librarysystem.ui.roombooking.RoomBookingViewModel;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Objects;
+
+
 
 public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.OnBookingClickListener {
     private FragmentRoomBookingBinding binding;
@@ -34,6 +37,7 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
     private FirebaseFirestore db;
     private String currentStudentId;
+    private RoomBookingViewModel viewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -41,9 +45,11 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         binding = FragmentRoomBookingBinding.inflate(inflater, container, false);
         db = FirebaseFirestore.getInstance();
 
+        // Initialize ViewModel
+        viewModel = new ViewModelProvider(this).get(RoomBookingViewModel.class);
+
         // Safely get current student ID
-        String email = Objects.requireNonNull(
-                FirebaseManager.getInstance().getCurrentUser()).getEmail();
+        String email = FirebaseManager.getInstance().getCurrentUser().getEmail();
         currentStudentId = email != null ? email.split("@")[0].toUpperCase() : "";
 
         setupRoomSpinner();
@@ -51,6 +57,19 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         setupRecyclerView();
         setupBookingButton();
         loadUserBookings();
+
+        // Observe ViewModel data
+        viewModel.getBookings().observe(getViewLifecycleOwner(), uiRoomBookings -> {
+            if (uiRoomBookings != null) {
+                adapter.submitList(uiRoomBookings);
+            }
+        });
+
+        viewModel.getBookingResult().observe(getViewLifecycleOwner(), message -> {
+            if (message != null) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
 
         return binding.getRoot();
     }
@@ -154,7 +173,9 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
     }
 
     private void createBooking() {
-        String roomNumber = binding.roomSpinner.getSelectedItem().toString();
+        String roomNumberStr = binding.roomSpinner.getSelectedItem().toString();
+        // Extract number and convert to long
+        long roomNumber = Long.parseLong(roomNumberStr.replaceAll("\\D+", ""));
         String participantsNames = binding.participantNamesInput.getText().toString();
         String participantsIds = binding.participantIdsInput.getText().toString();
 
@@ -171,28 +192,21 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         endCal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endTimeParts[0]));
         endCal.set(Calendar.MINUTE, Integer.parseInt(endTimeParts[1]));
 
-        // Create booking data matching Firebase fields exactly
-        Map<String, Object> booking = new HashMap<>();
-        booking.put("bookingStudentId", currentStudentId);
-        booking.put("endTime", endCal.getTime());
-        booking.put("participantsIds", participantsIds);
-        booking.put("participantsNames", participantsNames);
-        booking.put("roomNumber", roomNumber);
-        booking.put("startTime", startCal.getTime());
-        booking.put("status", "Active");
-
-        // Save to Firebase
-        db.collection("roomBookings")
-                .add(booking)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(getContext(), "Booking created successfully", Toast.LENGTH_SHORT).show();
-                    clearInputs();
-                    loadUserBookings();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to create booking", Toast.LENGTH_SHORT).show();
-                });
+        if (viewModel.isValidBookingTime(startCal.getTime(), endCal.getTime()) &&
+                viewModel.isWithinBookingHours(startCal.getTime())) {
+            viewModel.createBooking(
+                    currentStudentId,
+                    roomNumber,  // now passing long
+                    startCal.getTime(),
+                    endCal.getTime(),
+                    participantsIds,
+                    participantsNames
+            );
+        } else {
+            Toast.makeText(getContext(), "Invalid booking time", Toast.LENGTH_SHORT).show();
+        }
     }
+
 
     private void clearInputs() {
         binding.dateInput.setText("");
@@ -203,15 +217,7 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
     }
 
     private void loadUserBookings() {
-        db.collection("roomBookings")
-                .whereEqualTo("bookingStudentId", currentStudentId)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    adapter.submitList(querySnapshot.toObjects(RoomBooking.class));
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to load bookings", Toast.LENGTH_SHORT).show();
-                });
+        viewModel.loadUserBookings(currentStudentId);
     }
 
     @Override

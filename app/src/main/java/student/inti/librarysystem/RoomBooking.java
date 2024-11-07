@@ -22,7 +22,7 @@ public class RoomBooking {
     private String participantsNames;
 
     @PropertyName("roomNumber")
-    private String roomNumber;
+    private long roomNumber;
 
     @PropertyName("startTime")
     private Date startTime;
@@ -34,7 +34,7 @@ public class RoomBooking {
     public RoomBooking() {}
 
     public RoomBooking(String bookingStudentId, Date endTime, String participantsIds,
-                       String participantsNames, String roomNumber, Date startTime,
+                       String participantsNames, long roomNumber, Date startTime,
                        String status) {
         this.bookingStudentId = bookingStudentId;
         this.endTime = endTime;
@@ -46,6 +46,7 @@ public class RoomBooking {
     }
 
     // Getters and Setters with PropertyName annotations to match Firestore fields
+    @DocumentId
     public String getId() {
         return id;
     }
@@ -95,12 +96,12 @@ public class RoomBooking {
     }
 
     @PropertyName("roomNumber")
-    public String getRoomNumber() {
+    public long getRoomNumber() {
         return roomNumber;
     }
 
     @PropertyName("roomNumber")
-    public void setRoomNumber(String roomNumber) {
+    public void setRoomNumber(long roomNumber) {
         this.roomNumber = roomNumber;
     }
 

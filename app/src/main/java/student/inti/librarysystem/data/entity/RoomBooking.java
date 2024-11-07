@@ -18,18 +18,18 @@ public class RoomBooking {
     private Date endTime;
     private String participantsIds;
     private String participantsNames;
-    private String roomNumber;
+    private long roomNumber;
     private Date startTime;
     private String status;
 
-    // Default constructor for Room
+    // Required empty constructor for Room
     public RoomBooking() {}
 
-    // Constructor for normal use - mark with @Ignore
+    // Constructor for normal use
     @Ignore
-    public RoomBooking(String bookingStudentId, Date endTime, String participantsIds,
-                       String participantsNames, String roomNumber, Date startTime,
-                       String status) {
+    public RoomBooking(String bookingStudentId, Date endTime,
+                       String participantsIds, String participantsNames,
+                       long roomNumber, Date startTime, String status) {
         this.bookingStudentId = bookingStudentId;
         this.endTime = endTime;
         this.participantsIds = participantsIds;
@@ -39,6 +39,7 @@ public class RoomBooking {
         this.status = status;
     }
 
+    // Getters and Setters
     @NonNull
     public String getId() {
         return id;
@@ -80,11 +81,11 @@ public class RoomBooking {
         this.participantsNames = participantsNames;
     }
 
-    public String getRoomNumber() {
+    public long getRoomNumber() {
         return roomNumber;
     }
 
-    public void setRoomNumber(String roomNumber) {
+    public void setRoomNumber(long roomNumber) {
         this.roomNumber = roomNumber;
     }
 
@@ -102,5 +103,21 @@ public class RoomBooking {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    // Optionally add equals() and hashCode() methods if needed
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RoomBooking that = (RoomBooking) o;
+
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }
