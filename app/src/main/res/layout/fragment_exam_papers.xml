@@ -6,12 +6,12 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- Filter Section -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:cardElevation="4dp"
-        app:cardCornerRadius="8dp">
+        app:cardElevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -19,13 +19,19 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/subjectCodeLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Filter Papers"
-                android:textStyle="bold"
-                android:textSize="18sp"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="8dp"
+                android:hint="@string/subject_code">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/subjectCodeEdit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -33,81 +39,58 @@
                 android:orientation="horizontal">
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/yearLayout"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_marginEnd="8dp"
-                    android:hint="Year"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+                    android:layout_weight="1"
+                    android:hint="@string/year">
 
-                    <AutoCompleteTextView
-                        android:id="@+id/year_dropdown"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/yearEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="none"/>
-
+                        android:inputType="number" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/semesterLayout"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:hint="Semester"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+                    android:hint="@string/semester">
 
-                    <AutoCompleteTextView
-                        android:id="@+id/semester_dropdown"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/semesterEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="none"/>
-
+                        android:inputType="number" />
                 </com.google.android.material.textfield.TextInputLayout>
-
             </LinearLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/applyFilterButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Search by Course Code"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/search_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textCapCharacters"
-                    android:maxLines="1" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
+                android:layout_marginTop="8dp"
+                android:text="@string/apply_filters" />
         </LinearLayout>
-
     </com.google.android.material.card.MaterialCardView>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/exam_papers_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"/>
-
-    <TextView
-        android:id="@+id/no_papers_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="No exam papers found"
-        android:textAlignment="center"
-        android:textSize="16sp"
-        android:visibility="gone"
-        android:layout_marginTop="32dp"/>
-
     <ProgressBar
-        android:id="@+id/loading_indicator"
+        android:id="@+id/loadingView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"/>
+        android:visibility="gone" />
+
+    <!-- RecyclerView for exam papers list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/examPapersRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
 </LinearLayout>

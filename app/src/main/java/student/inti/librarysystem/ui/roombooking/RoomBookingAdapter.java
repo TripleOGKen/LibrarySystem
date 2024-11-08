@@ -1,6 +1,7 @@
 package student.inti.librarysystem.ui.roombooking;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
@@ -11,6 +12,8 @@ import student.inti.librarysystem.RoomBooking;
 import student.inti.librarysystem.databinding.ItemRoomBookingBinding;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Date;
+
 
 public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdapter.BookingViewHolder> {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -19,6 +22,7 @@ public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdap
 
     public interface OnBookingClickListener {
         void onBookingClick(RoomBooking booking);
+        void onCancelBooking(RoomBooking booking);  // New method for cancel action
     }
 
     public RoomBookingAdapter(OnBookingClickListener listener) {
@@ -54,10 +58,10 @@ public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdap
 
     @Override
     public void onBindViewHolder(@NonNull BookingViewHolder holder, int position) {
-        holder.bind(getItem(position), dateFormat, timeFormat);
+        holder.bind(getItem(position));
     }
 
-    public static class BookingViewHolder extends RecyclerView.ViewHolder {
+    public class BookingViewHolder extends RecyclerView.ViewHolder {
         private final ItemRoomBookingBinding binding;
         private final OnBookingClickListener listener;
 
@@ -69,16 +73,23 @@ public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdap
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
-                    listener.onBookingClick((RoomBooking) itemView.getTag());
+                    RoomBooking booking = getItem(position);
+                    listener.onBookingClick(booking);
+                }
+            });
+
+            // Set up cancel button click listener
+            binding.cancelBookingButton.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    RoomBooking booking = getItem(position);
+                    listener.onCancelBooking(booking);
                 }
             });
         }
 
-        void bind(RoomBooking booking, SimpleDateFormat dateFormat, SimpleDateFormat timeFormat) {
+        void bind(RoomBooking booking) {
             if (booking != null) {
-                itemView.setTag(booking);
-
-                // Use String.format with explicit Locale
                 binding.roomNumber.setText(String.format(Locale.getDefault(),
                         "Discussion Room %d", booking.getRoomNumber()));
 
@@ -91,16 +102,43 @@ public class RoomBookingAdapter extends ListAdapter<RoomBooking, RoomBookingAdap
                                     timeFormat.format(booking.getEndTime()) : ""));
                 }
 
+                // Format and set participant details
+                String participantDetails = formatParticipantDetails(
+                        booking.getParticipantsNames(),
+                        booking.getParticipantsIds()
+                );
+                binding.participantDetails.setText(participantDetails);
+
                 binding.bookingStatus.setText(booking.getStatus());
 
                 if ("Active".equals(booking.getStatus())) {
-                    binding.bookingStatus.setBackgroundResource(
-                            R.drawable.status_active_background);
+                    binding.bookingStatus.setBackgroundResource(R.drawable.status_active_background);
+                    binding.cancelBookingButton.setVisibility(View.VISIBLE);
                 } else {
-                    binding.bookingStatus.setBackgroundResource(
-                            R.drawable.status_pending_background);
+                    binding.bookingStatus.setBackgroundResource(R.drawable.status_pending_background);
+                    binding.cancelBookingButton.setVisibility(View.GONE);
                 }
             }
+        }
+
+        private String formatParticipantDetails(String names, String ids) {
+            if (names == null || ids == null) return "";
+
+            String[] nameList = names.split(",");
+            String[] idList = ids.split(",");
+
+            StringBuilder details = new StringBuilder();
+            int length = Math.min(nameList.length, idList.length);
+
+            for (int i = 0; i < length; i++) {
+                String name = nameList[i].trim();
+                String id = idList[i].trim();
+
+                if (i > 0) details.append("\n");
+                details.append(String.format("%s (%s)", name, id));
+            }
+
+            return details.toString();
         }
     }
 }

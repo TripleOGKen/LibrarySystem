@@ -1,74 +1,54 @@
 package student.inti.librarysystem.data.entity;
 
+import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "exam_papers")
 public class ExamPaper {
-    @PrimaryKey(autoGenerate = true)
-    private long id;
-    private String courseCode;
-    private String courseName;
+    @PrimaryKey
+    @NonNull
+    private String paperId;
+    private String subjectCode;
+    private String subjectName;
     private int year;
-    private String semester;
-    private String filePath;
+    private int semester;
+    private String fileUrl;
+    private long fileSize;
 
-    // Constructor
-    public ExamPaper(String courseCode, String courseName, int year,
-                     String semester, String filePath) {
-        this.courseCode = courseCode;
-        this.courseName = courseName;
+    public ExamPaper() {}
+
+    public ExamPaper(String paperId, String subjectCode, String subjectName,
+                     int year, int semester, String fileUrl, long fileSize) {
+        this.paperId = paperId;
+        this.subjectCode = subjectCode;
+        this.subjectName = subjectName;
         this.year = year;
         this.semester = semester;
-        this.filePath = filePath;
+        this.fileUrl = fileUrl;
+        this.fileSize = fileSize;
     }
 
     // Getters and Setters
-    public long getId() {
-        return id;
-    }
+    @NonNull
+    public String getPaperId() { return paperId; }
+    public void setPaperId(String paperId) { this.paperId = paperId; }
 
-    public void setId(long id) {
-        this.id = id;
-    }
+    public String getSubjectCode() { return subjectCode; }
+    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
 
-    public String getCourseCode() {
-        return courseCode;
-    }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
-    public void setCourseCode(String courseCode) {
-        this.courseCode = courseCode;
-    }
+    public int getYear() { return year; }
+    public void setYear(int year) { this.year = year; }
 
-    public String getCourseName() {
-        return courseName;
-    }
+    public int getSemester() { return semester; }
+    public void setSemester(int semester) { this.semester = semester; }
 
-    public void setCourseName(String courseName) {
-        this.courseName = courseName;
-    }
+    public String getFileUrl() { return fileUrl; }
+    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
 
-    public int getYear() {
-        return year;
-    }
-
-    public void setYear(int year) {
-        this.year = year;
-    }
-
-    public String getSemester() {
-        return semester;
-    }
-
-    public void setSemester(String semester) {
-        this.semester = semester;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
+    public long getFileSize() { return fileSize; }
+    public void setFileSize(long fileSize) { this.fileSize = fileSize; }
 }

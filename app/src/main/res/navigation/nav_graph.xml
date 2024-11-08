@@ -35,10 +35,17 @@
         android:label="Book Loans" />
 
     <!-- Exam Papers Fragment -->
-    <fragment
-        android:id="@+id/examPapersFragment"
-        android:name="student.inti.librarysystem.ui.exams.ExamPapersFragment"
-        android:label="Past Year Papers" />
+    <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/nav_graph"
+        app:startDestination="@id/examPapersFragment">
+
+        <fragment
+            android:id="@+id/examPapersFragment"
+            android:name="student.inti.librarysystem.ui.exams.ExamPapersFragment"
+            android:label="@string/title_exam_papers"
+            tools:layout="@layout/fragment_exam_papers" />
 
     <!-- Global Action for Logout -->
     <action
@@ -46,5 +53,5 @@
         app:destination="@id/loginFragment"
         app:popUpTo="@id/nav_graph"
         app:popUpToInclusive="true" />
-
+    </navigation>
 </navigation>

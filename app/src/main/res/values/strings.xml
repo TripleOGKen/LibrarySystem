@@ -18,13 +18,16 @@
     <string name="three_weeks">3 Weeks</string>
     <string name="room_booking_time_format">%s - %s</string>
     <string name="profile_image">Profile Image</string>
-    <string name="download">Download</string>
     <string name="nav_header_title">Android Studio</string>
     <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
-
-
+    <string name="title_exam_papers">Exam Papers</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="download">Download</string>
+    <string name="subject_code">Subject Code</string>
+    <string name="year">Year</string>
+    <string name="semester">Semester</string>
 
 
 </resources>

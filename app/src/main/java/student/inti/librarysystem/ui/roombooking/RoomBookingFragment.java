@@ -22,12 +22,8 @@ import student.inti.librarysystem.util.FirebaseManager;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-import student.inti.librarysystem.ui.roombooking.RoomBookingViewModel;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Objects;
-
-
 
 public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.OnBookingClickListener {
     private FragmentRoomBookingBinding binding;
@@ -49,7 +45,7 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         viewModel = new ViewModelProvider(this).get(RoomBookingViewModel.class);
 
         // Safely get current student ID
-        String email = FirebaseManager.getInstance().getCurrentUser().getEmail();
+        String email = Objects.requireNonNull(FirebaseManager.getInstance().getCurrentUser()).getEmail();
         currentStudentId = email != null ? email.split("@")[0].toUpperCase() : "";
 
         setupRoomSpinner();
@@ -57,11 +53,16 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         setupRecyclerView();
         setupBookingButton();
         loadUserBookings();
+        observeViewModel();
 
-        // Observe ViewModel data
-        viewModel.getBookings().observe(getViewLifecycleOwner(), uiRoomBookings -> {
-            if (uiRoomBookings != null) {
-                adapter.submitList(uiRoomBookings);
+        setupClearHistoryButton();
+        return binding.getRoot();
+    }
+
+    private void observeViewModel() {
+        viewModel.getBookings().observe(getViewLifecycleOwner(), roomBookings -> {
+            if (roomBookings != null) {
+                adapter.submitList(roomBookings);
             }
         });
 
@@ -71,7 +72,10 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
             }
         });
 
-        return binding.getRoot();
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            binding.progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            binding.bookRoomButton.setEnabled(!isLoading);
+        });
     }
 
     private void setupRecyclerView() {
@@ -106,14 +110,30 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
     private void showDatePicker() {
         Calendar minDate = Calendar.getInstance();
         Calendar maxDate = Calendar.getInstance();
-        maxDate.add(Calendar.DAY_OF_MONTH, 7);
+        maxDate.add(Calendar.DAY_OF_MONTH, 7); // Allow bookings up to 7 days in advance
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
                 (view, year, month, dayOfMonth) -> {
+                    Calendar selected = Calendar.getInstance();
+                    selected.set(year, month, dayOfMonth);
+
+                    // Check if selected date is weekend
+                    int dayOfWeek = selected.get(Calendar.DAY_OF_WEEK);
+                    if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                        Toast.makeText(getContext(),
+                                "Invalid date/time. Outside of operation hours",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     selectedDateTime.set(Calendar.YEAR, year);
                     selectedDateTime.set(Calendar.MONTH, month);
                     selectedDateTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
                     binding.dateInput.setText(dateFormat.format(selectedDateTime.getTime()));
+
+                    // Clear time inputs when date changes
+                    binding.startTimeInput.setText("");
+                    binding.endTimeInput.setText("");
                 }, selectedDateTime.get(Calendar.YEAR),
                 selectedDateTime.get(Calendar.MONTH),
                 selectedDateTime.get(Calendar.DAY_OF_MONTH));
@@ -126,6 +146,14 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
     private void showTimePicker(boolean isStartTime) {
         TimePickerDialog timePickerDialog = new TimePickerDialog(requireContext(),
                 (view, hourOfDay, minute) -> {
+                    // Check if time is within operation hours (10 AM - 6 PM)
+                    if (hourOfDay < 10 || hourOfDay >= 18) {
+                        Toast.makeText(getContext(),
+                                "Invalid date/time. Outside of operation hours (10 AM - 6 PM)",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     Calendar cal = Calendar.getInstance();
                     cal.set(Calendar.YEAR, selectedDateTime.get(Calendar.YEAR));
                     cal.set(Calendar.MONTH, selectedDateTime.get(Calendar.MONTH));
@@ -133,12 +161,33 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
                     cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
                     cal.set(Calendar.MINUTE, minute);
 
+                    // Check if selected time is in the past
+                    if (cal.before(Calendar.getInstance())) {
+                        Toast.makeText(getContext(), "Cannot select past time", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     if (isStartTime) {
                         binding.startTimeInput.setText(timeFormat.format(cal.getTime()));
                         // Set end time to 2 hours after start time
                         cal.add(Calendar.HOUR_OF_DAY, 2);
+                        if (cal.get(Calendar.HOUR_OF_DAY) > 18) {
+                            cal.set(Calendar.HOUR_OF_DAY, 18);
+                            cal.set(Calendar.MINUTE, 0);
+                        }
                         binding.endTimeInput.setText(timeFormat.format(cal.getTime()));
                     } else {
+                        // Validate end time is after start time
+                        String startTimeStr = binding.startTimeInput.getText().toString();
+                        if (!startTimeStr.isEmpty()) {
+                            Date startTime = parseTime(startTimeStr);
+                            if (startTime != null && cal.getTime().before(startTime)) {
+                                Toast.makeText(getContext(),
+                                        "End time must be after start time",
+                                        Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                        }
                         binding.endTimeInput.setText(timeFormat.format(cal.getTime()));
                     }
                 }, selectedDateTime.get(Calendar.HOUR_OF_DAY),
@@ -146,6 +195,27 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
                 true);
 
         timePickerDialog.show();
+    }
+
+    private void setupClearHistoryButton() {
+        binding.clearHistoryButton.setOnClickListener(v -> {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Clear Booking History")
+                    .setMessage("Are you sure you want to clear your booking history? This will remove all cancelled and completed bookings. Active bookings will not be affected.")
+                    .setPositiveButton("Clear", (dialog, which) -> {
+                        viewModel.clearBookingHistory(currentStudentId);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+    }
+
+    private Date parseTime(String timeStr) {
+        try {
+            return timeFormat.parse(timeStr);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void setupBookingButton() {
@@ -174,12 +244,10 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
 
     private void createBooking() {
         String roomNumberStr = binding.roomSpinner.getSelectedItem().toString();
-        // Extract number and convert to long
         long roomNumber = Long.parseLong(roomNumberStr.replaceAll("\\D+", ""));
         String participantsNames = binding.participantNamesInput.getText().toString();
         String participantsIds = binding.participantIdsInput.getText().toString();
 
-        // Parse date and times
         Calendar startCal = (Calendar) selectedDateTime.clone();
         Calendar endCal = (Calendar) selectedDateTime.clone();
 
@@ -192,21 +260,18 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         endCal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endTimeParts[0]));
         endCal.set(Calendar.MINUTE, Integer.parseInt(endTimeParts[1]));
 
-        if (viewModel.isValidBookingTime(startCal.getTime(), endCal.getTime()) &&
-                viewModel.isWithinBookingHours(startCal.getTime())) {
-            viewModel.createBooking(
-                    currentStudentId,
-                    roomNumber,  // now passing long
-                    startCal.getTime(),
-                    endCal.getTime(),
-                    participantsIds,
-                    participantsNames
-            );
-        } else {
-            Toast.makeText(getContext(), "Invalid booking time", Toast.LENGTH_SHORT).show();
-        }
-    }
+        viewModel.createBooking(
+                currentStudentId,
+                roomNumber,
+                startCal.getTime(),
+                endCal.getTime(),
+                participantsIds,
+                participantsNames
+        );
 
+        // Clear inputs after booking
+        clearInputs();
+    }
 
     private void clearInputs() {
         binding.dateInput.setText("");
@@ -225,14 +290,50 @@ public class RoomBookingFragment extends Fragment implements RoomBookingAdapter.
         new AlertDialog.Builder(requireContext())
                 .setTitle("Booking Details")
                 .setMessage(String.format(Locale.getDefault(),
-                        "Room: %s\nDate: %s\nTime: %s - %s\nParticipants: %s\nStatus: %s",
+                        "Room: Discussion Room %d\n" +
+                                "Date: %s\n" +
+                                "Time: %s - %s\n" +
+                                "Participants:\n%s\n" +
+                                "Status: %s",
                         booking.getRoomNumber(),
                         dateFormat.format(booking.getStartTime()),
                         timeFormat.format(booking.getStartTime()),
                         timeFormat.format(booking.getEndTime()),
-                        booking.getParticipantsNames(),
+                        formatParticipantDetails(booking.getParticipantsNames(), booking.getParticipantsIds()),
                         booking.getStatus()))
                 .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private String formatParticipantDetails(String names, String ids) {
+        if (names == null || ids == null) return "";
+
+        String[] nameList = names.split(",");
+        String[] idList = ids.split(",");
+
+        StringBuilder details = new StringBuilder();
+        int length = Math.min(nameList.length, idList.length);
+
+        for (int i = 0; i < length; i++) {
+            String name = nameList[i].trim();
+            String id = idList[i].trim();
+
+            if (i > 0) details.append("\n");
+            details.append(String.format("%s (%s)", name, id));
+        }
+
+        return details.toString();
+    }
+
+    @Override
+    public void onCancelBooking(RoomBooking booking) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Cancel Booking")
+                .setMessage("Are you sure you want to cancel this booking?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    viewModel.cancelBooking(booking);
+                })
+                .setNegativeButton("No", null)
                 .show();
     }
 

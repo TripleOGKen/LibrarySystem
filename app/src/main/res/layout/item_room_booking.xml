@@ -13,13 +13,30 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Room Number -->
-        <TextView
-            android:id="@+id/room_number"
+        <!-- Top row with Room Number and Status -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/room_number"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/booking_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:background="@drawable/status_background"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
 
         <!-- Date -->
         <LinearLayout
@@ -59,16 +76,37 @@
                 android:layout_height="wrap_content"/>
         </LinearLayout>
 
-        <!-- Status -->
-        <TextView
-            android:id="@+id/booking_status"
+        <!-- Participants -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Participants:"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/participant_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+
+        <!-- Cancel Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancelBookingButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="end"
             android:layout_marginTop="8dp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp"
-            android:background="@drawable/status_background"
-            android:textColor="@android:color/white"/>
+            android:text="Cancel Booking"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/design_default_color_error"
+            android:textColor="@color/design_default_color_error"/>
 
     </LinearLayout>
 

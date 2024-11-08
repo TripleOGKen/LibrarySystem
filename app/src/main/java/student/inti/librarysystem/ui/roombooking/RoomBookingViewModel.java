@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 import student.inti.librarysystem.RoomBooking;
 import student.inti.librarysystem.repository.LibraryRepository;
 import java.util.ArrayList;
@@ -13,7 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
-import com.google.firebase.firestore.DocumentSnapshot;
+import java.util.concurrent.atomic.AtomicInteger;
+import com.google.firebase.firestore.FieldPath;
 
 
 public class RoomBookingViewModel extends AndroidViewModel {
@@ -35,6 +37,18 @@ public class RoomBookingViewModel extends AndroidViewModel {
                               String participantsIds, String participantsNames) {
         isLoading.setValue(true);
 
+        if (!isValidBookingTime(startTime, endTime)) {
+            bookingResult.setValue("Invalid booking duration. Must be between 1 and 4 hours");
+            isLoading.setValue(false);
+            return;
+        }
+
+        if (!isWithinBookingHours(startTime) || !isWithinBookingHours(endTime)) {
+            bookingResult.setValue("Invalid date/time. Outside of operation hours");
+            isLoading.setValue(false);
+            return;
+        }
+
         checkBookingConflicts(roomNumber, startTime, endTime, conflicts -> {
             if (conflicts) {
                 bookingResult.setValue("Room is already booked for the selected time slot");
@@ -47,7 +61,7 @@ public class RoomBookingViewModel extends AndroidViewModel {
                     endTime,
                     participantsIds,
                     participantsNames,
-                    roomNumber,  // now passing long
+                    roomNumber,
                     startTime,
                     "Active"
             );
@@ -83,18 +97,74 @@ public class RoomBookingViewModel extends AndroidViewModel {
                     });
         });
     }
+
+    public void cancelBooking(RoomBooking booking) {
+        isLoading.setValue(true);
+
+        db.collection("roomBookings")
+                .document(booking.getId())
+                .update("status", "Cancelled")
+                .addOnSuccessListener(aVoid -> {
+                    bookingResult.setValue("Booking cancelled successfully");
+                    loadUserBookings(booking.getBookingStudentId());
+                    isLoading.setValue(false);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error cancelling booking", e);
+                    bookingResult.setValue("Failed to cancel booking");
+                    isLoading.setValue(false);
+                });
+    }
+
+    public void clearBookingHistory(String studentId) {
+        isLoading.setValue(true);
+
+        db.collection("roomBookings")
+                .whereEqualTo("bookingStudentId", studentId)
+                .whereNotEqualTo("status", "Active")
+                .orderBy("status")  // Add this to match index
+                .orderBy(FieldPath.documentId())  // This represents __name__
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    int totalDocs = querySnapshot.size();
+                    if (totalDocs == 0) {
+                        bookingResult.setValue("No history to clear");
+                        isLoading.setValue(false);
+                        return;
+                    }
+
+                    AtomicInteger processedDocs = new AtomicInteger(0);
+
+                    for (DocumentSnapshot document : querySnapshot.getDocuments()) {
+                        document.getReference().delete()
+                                .addOnCompleteListener(task -> {
+                                    int processed = processedDocs.incrementAndGet();
+                                    if (processed == totalDocs) {
+                                        bookingResult.setValue("Booking history cleared successfully");
+                                        loadUserBookings(studentId);
+                                        isLoading.setValue(false);
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error clearing booking history", e);
+                    bookingResult.setValue("Failed to clear booking history");
+                    isLoading.setValue(false);
+                });
+    }
+
     private void checkBookingConflicts(long roomNumber, Date startTime, Date endTime,
                                        ConflictCheckCallback callback) {
         db.collection("roomBookings")
                 .whereEqualTo("roomNumber", roomNumber)
-                .whereEqualTo("status", "Active")  // Only check active bookings
+                .whereEqualTo("status", "Active")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     boolean hasConflicts = false;
                     for (DocumentSnapshot document : querySnapshot.getDocuments()) {
                         RoomBooking existingBooking = document.toObject(RoomBooking.class);
                         if (existingBooking != null) {
-                            // Check if the time slots overlap
                             boolean overlaps = (startTime.before(existingBooking.getEndTime()) &&
                                     endTime.after(existingBooking.getStartTime()));
                             if (overlaps) {
@@ -147,23 +217,21 @@ public class RoomBookingViewModel extends AndroidViewModel {
         return minutes >= 60 && minutes <= 240;
     }
 
-    public boolean isWithinBookingHours(Date startTime) {
-        if (startTime == null) return false;
+    public boolean isWithinBookingHours(Date date) {
+        if (date == null) return false;
 
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startTime);
-
-        // Get day of week (1 = Sunday, 2 = Monday, ..., 7 = Saturday)
-        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        calendar.setTime(date);
 
         // Check if it's a weekday (Monday to Friday)
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
         if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
             return false;
         }
 
+        // Check if time is between 10 AM and 6 PM
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
-        // Allow bookings between 8:00 AM and 8:00 PM (20:00)
-        return hour >= 8 && hour < 20;
+        return hour >= 10 && hour < 18;  // Changed to return true when within hours
     }
 
     public LiveData<List<RoomBooking>> getBookings() {

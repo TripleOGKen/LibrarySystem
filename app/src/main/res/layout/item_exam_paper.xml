@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
     app:cardElevation="4dp">
 
     <LinearLayout
@@ -13,39 +12,38 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Subject Name -->
         <TextView
-            android:id="@+id/subject_name"
+            android:id="@+id/subjectNameText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <!-- Paper Code -->
         <TextView
-            android:id="@+id/paper_code"
+            android:id="@+id/subjectCodeText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/secondary_text"/>
+            android:layout_marginTop="4dp" />
 
-        <!-- Year -->
         <TextView
-            android:id="@+id/paper_year"
+            android:id="@+id/yearSemesterText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/secondary_text"/>
+            android:layout_marginTop="4dp" />
 
-        <!-- Download Button -->
+        <TextView
+            android:id="@+id/fileSizeText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/download_button"
+            android:id="@+id/downloadButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="end"
             android:layout_marginTop="8dp"
-            android:text="@string/download"
-            style="@style/Widget.MaterialComponents.Button.TextButton"/>
-
+            android:text="@string/download" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
