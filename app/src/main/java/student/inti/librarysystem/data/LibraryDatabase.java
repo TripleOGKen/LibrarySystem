@@ -6,8 +6,11 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 import student.inti.librarysystem.data.dao.*;
+import student.inti.librarysystem.data.dao.ExamPaperDao;
 import student.inti.librarysystem.data.entity.*;
+import student.inti.librarysystem.data.entity.ExamPaper;
 import student.inti.librarysystem.util.DateConverter;
+import student.inti.librarysystem.util.TimestampConverter;
 
 @Database(entities = {
         student.inti.librarysystem.data.entity.Student.class,
@@ -15,9 +18,12 @@ import student.inti.librarysystem.util.DateConverter;
         student.inti.librarysystem.data.entity.BookLoan.class,
         student.inti.librarysystem.data.entity.ExamPaper.class,
         student.inti.librarysystem.data.entity.Book.class
-}, version = 2, // Increased from 1 to 2
+}, version = 2,
         exportSchema = false)
-@TypeConverters({DateConverter.class})
+@TypeConverters({
+        DateConverter.class,
+        TimestampConverter.class  // Combined in single annotation
+})
 public abstract class LibraryDatabase extends RoomDatabase {
     private static volatile LibraryDatabase INSTANCE;
 
@@ -36,7 +42,7 @@ public abstract class LibraryDatabase extends RoomDatabase {
                                     LibraryDatabase.class,
                                     "library_database"
                             )
-                            .fallbackToDestructiveMigration() // This will recreate tables if schema changes
+                            .fallbackToDestructiveMigration()
                             .addCallback(new LibraryDatabaseCallback())
                             .build();
                 }

@@ -22,6 +22,9 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
+import android.content.Intent;
+import student.inti.librarysystem.ui.pdf.PdfViewerActivity;
+import student.inti.librarysystem.util.DriveUrlConverter;
 
 public class ExamPapersFragment extends Fragment implements ExamPapersAdapter.OnPaperClickListener {
     private ExamPaperViewModel viewModel;
@@ -131,30 +134,53 @@ public class ExamPapersFragment extends Fragment implements ExamPapersAdapter.On
         viewModel.loadExamPapers(subjectCode, year, semester);
     }
 
+
+    @Override
+    public void onViewClick(ExamPaper paper) {
+        if (getContext() == null) return;
+
+        // Check if file URL exists
+        if (paper.getFileUrl() == null || paper.getFileUrl().isEmpty()) {
+            showMessage("PDF URL not available");
+            return;
+        }
+
+        // Create title for the viewer
+        String title = String.format("%s (%s)",
+                paper.getSubjectName(),
+                paper.getSubjectCode());
+
+        // Launch PDF viewer
+        Intent intent = PdfViewerActivity.createIntent(
+                requireContext(),
+                paper.getFileUrl(),
+                title
+        );
+        startActivity(intent);
+    }
+
+
     @Override
     public void onDownloadClick(ExamPaper paper) {
         if (getContext() == null) return;
 
-        StorageReference storageRef = storage.getReferenceFromUrl(paper.getFileUrl());
+        String directUrl = DriveUrlConverter.convertToDirect(paper.getFileUrl());
 
-        storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-            DownloadManager downloadManager = (DownloadManager) requireContext()
-                    .getSystemService(Context.DOWNLOAD_SERVICE);
+        DownloadManager downloadManager = (DownloadManager) requireContext()
+                .getSystemService(Context.DOWNLOAD_SERVICE);
 
-            DownloadManager.Request request = new DownloadManager.Request(uri)
-                    .setTitle(paper.getSubjectName() + " Exam Paper")
-                    .setDescription("Downloading exam paper for " + paper.getSubjectCode())
-                    .setNotificationVisibility(
-                            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    .setDestinationInExternalPublicDir(
-                            Environment.DIRECTORY_DOWNLOADS,
-                            "ExamPapers/" + paper.getSubjectCode() + "_" +
-                                    paper.getYear() + "_" + paper.getSemester() + ".pdf");
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(directUrl))
+                .setTitle(paper.getSubjectName() + " Exam Paper")
+                .setDescription("Downloading exam paper for " + paper.getSubjectCode())
+                .setNotificationVisibility(
+                        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        "ExamPapers/" + paper.getSubjectCode() + "_" +
+                                paper.getYear() + "_" + paper.getSemester() + ".pdf");
 
-            downloadManager.enqueue(request);
-            showMessage("Download started");
-        }).addOnFailureListener(e ->
-                showMessage("Failed to start download: " + e.getMessage()));
+        downloadManager.enqueue(request);
+        showMessage("Download started");
     }
 
     private void showMessage(String message) {

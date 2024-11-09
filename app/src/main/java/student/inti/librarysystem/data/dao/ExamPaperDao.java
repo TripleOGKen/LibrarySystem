@@ -16,14 +16,14 @@ public interface ExamPaperDao {
     @Delete
     void delete(ExamPaper examPaper);
 
-    @Query("SELECT * FROM exam_papers WHERE id = :id")
-    LiveData<ExamPaper> getExamPaper(long id);
+    @Query("SELECT * FROM exam_papers WHERE paperId = :paperId")
+    LiveData<ExamPaper> getExamPaper(String paperId);
 
     @Query("SELECT * FROM exam_papers ORDER BY year DESC, semester DESC")
     LiveData<List<ExamPaper>> getAllExamPapers();
 
-    @Query("SELECT * FROM exam_papers WHERE courseCode = :courseCode ORDER BY year DESC, semester DESC")
-    LiveData<List<ExamPaper>> getExamPapersByCourse(String courseCode);
+    @Query("SELECT * FROM exam_papers WHERE subjectCode = :subjectCode ORDER BY year DESC, semester DESC")
+    LiveData<List<ExamPaper>> getExamPapersByCourse(String subjectCode);
 
     @Query("SELECT * FROM exam_papers WHERE year = :year ORDER BY semester DESC")
     LiveData<List<ExamPaper>> getExamPapersByYear(int year);

@@ -19,6 +19,7 @@ public class ExamPapersAdapter extends RecyclerView.Adapter<ExamPapersAdapter.Ex
 
     public interface OnPaperClickListener {
         void onDownloadClick(ExamPaper paper);
+        void onViewClick(ExamPaper paper);
     }
 
     public ExamPapersAdapter(OnPaperClickListener listener) {
@@ -54,6 +55,7 @@ public class ExamPapersAdapter extends RecyclerView.Adapter<ExamPapersAdapter.Ex
         private final TextView subjectCodeText;
         private final TextView yearSemesterText;
         private final TextView fileSizeText;
+        private final MaterialButton viewButton;
         private final MaterialButton downloadButton;
 
         public ExamPaperViewHolder(@NonNull View itemView) {
@@ -62,16 +64,16 @@ public class ExamPapersAdapter extends RecyclerView.Adapter<ExamPapersAdapter.Ex
             subjectCodeText = itemView.findViewById(R.id.subjectCodeText);
             yearSemesterText = itemView.findViewById(R.id.yearSemesterText);
             fileSizeText = itemView.findViewById(R.id.fileSizeText);
+            viewButton = itemView.findViewById(R.id.viewButton);
             downloadButton = itemView.findViewById(R.id.downloadButton);
         }
 
         public void bind(ExamPaper paper, OnPaperClickListener listener) {
             subjectNameText.setText(paper.getSubjectName());
             subjectCodeText.setText(paper.getSubjectCode());
-            yearSemesterText.setText(String.format("Year: %d, Semester: %d",
-                    paper.getYear(), paper.getSemester()));
+            yearSemesterText.setText(String.format("Year: %d, Semester: %d", paper.getYear(), paper.getSemester()));
             fileSizeText.setText(formatFileSize(paper.getFileSize()));
-
+            viewButton.setOnClickListener(v -> listener.onViewClick(paper));
             downloadButton.setOnClickListener(v -> listener.onDownloadClick(paper));
         }
 

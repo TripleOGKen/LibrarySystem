@@ -28,6 +28,7 @@
     <string name="subject_code">Subject Code</string>
     <string name="year">Year</string>
     <string name="semester">Semester</string>
-
+    <string name="view">View</string>
+    <string name="pdf_page_content">PDF page content</string>
 
 </resources>

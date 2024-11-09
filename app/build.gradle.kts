@@ -105,6 +105,10 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
     implementation ("com.google.android.gms:play-services-tasks:18.0.2")
 
+    // PDF Viewer
+    implementation ("androidx.viewpager2:viewpager2:1.0.0")
+    implementation ("com.squareup.okhttp3:okhttp:4.9.3")
+
 
     tasks.register("printDebugSigningReport") {
         doLast {
